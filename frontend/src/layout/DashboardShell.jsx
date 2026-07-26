@@ -11,6 +11,7 @@ import {
   Sparkles,
   Users2,
   Menu,
+  LogOut,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -29,15 +30,19 @@ const navItems = [
 export default function DashboardShell({ children }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // UPDATED: Logout function now redirects to the Landing Page ("/") instead of Login page
+  const handleLogout = () => {
+    localStorage.removeItem("scholaros_user");
+    window.location.href = "/"; // Redirects to the home page (landing page)
+  };
+
   return (
     <div className="min-h-screen bg-radial-dashboard text-slate-950 relative overflow-hidden">
-      {/* Background Ambient Layers */}
       <div className="pointer-events-none absolute inset-0 hero-grid opacity-30" />
       <div className="pointer-events-none absolute inset-0 noise-overlay" />
       
       <div className="section-shell flex min-h-screen gap-6 py-6 lg:gap-8 relative z-10">
         
-        {/* PREMIUM FLOATING GLASS SIDEBAR */}
         <aside className="glass-panel shadow-sidebar sticky top-6 hidden h-[calc(100vh-3rem)] w-80 shrink-0 rounded-[36px] px-6 py-8 lg:flex lg:flex-col border-white/60">
           <Link to="/" className="flex items-center gap-4 px-2">
             <div className="relative">
@@ -66,7 +71,6 @@ export default function DashboardShell({ children }) {
               >
                 {({ isActive }) => (
                   <>
-                    {/* Glowing Left Indicator */}
                     {isActive && (
                       <motion.div 
                         layoutId="activeNavIndicator"
@@ -89,7 +93,6 @@ export default function DashboardShell({ children }) {
             ))}
           </nav>
 
-          {/* Promo Card in Sidebar */}
           <div className="glass-dark-panel relative mt-auto overflow-hidden rounded-[28px] px-5 py-6 text-white">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.25),transparent_50%)]" />
             <div className="relative">
@@ -110,13 +113,10 @@ export default function DashboardShell({ children }) {
           </div>
         </aside>
 
-        {/* MAIN CONTENT AREA */}
         <div className="min-w-0 flex-1 space-y-6">
           
-          {/* PREMIUM GLASS TOP NAVBAR */}
           <div className="glass-panel shadow-sm sticky top-6 z-20 rounded-[28px] px-5 py-4 border-white/60">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              {/* Left: Breadcrumb & Title */}
               <div>
                 <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                   <span>Home</span>
@@ -132,35 +132,41 @@ export default function DashboardShell({ children }) {
                 </div>
               </div>
 
-              {/* Right: Actions & Profile */}
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                {/* Search */}
                 <div className="relative flex items-center rounded-full border border-slate-200/80 bg-white/80 px-4 py-2.5 text-sm text-slate-500 shadow-sm backdrop-blur-xl hover:bg-white transition-colors duration-200">
                   <Search className="mr-2 h-4 w-4 text-slate-400" />
                   Search papers, projects...
                   <kbd className="ml-2 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">⌘K</kbd>
                 </div>
                 
-                {/* Quick Actions */}
                 <div className="flex items-center gap-2">
                   <button className="group relative flex h-11 w-11 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 text-slate-600 shadow-sm backdrop-blur-xl hover:bg-white hover:text-slate-950 transition-all duration-200">
                     <Bell className="h-5 w-5" />
                     <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white">3</span>
                   </button>
                   
-                  {/* Profile Card */}
-                  <div className="group flex items-center gap-3 rounded-full border border-slate-200/80 bg-white/80 p-1.5 pr-4 shadow-sm backdrop-blur-xl hover:bg-white hover:shadow-md transition-all duration-200 cursor-pointer">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-600 text-sm font-semibold text-white shadow-md">
-                      LM
+                  <div className="flex items-center gap-2">
+                    <div className="group flex items-center gap-3 rounded-full border border-slate-200/80 bg-white/80 p-1.5 pr-4 shadow-sm backdrop-blur-xl hover:bg-white hover:shadow-md transition-all duration-200 cursor-pointer">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-violet-600 text-sm font-semibold text-white shadow-md">
+                        LM
+                      </div>
+                      <div className="hidden sm:block leading-tight">
+                        <div className="text-sm font-semibold text-slate-900">Leila Morgan</div>
+                        <div className="text-xs text-slate-500">Lead Scientist</div>
+                      </div>
                     </div>
-                    <div className="hidden sm:block leading-tight">
-                      <div className="text-sm font-semibold text-slate-900">Leila Morgan</div>
-                      <div className="text-xs text-slate-500">Lead Scientist</div>
-                    </div>
+
+                    {/* Logout button redirects to root "/" */}
+                    <button
+                      onClick={handleLogout}
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 p-0 text-slate-500 shadow-sm backdrop-blur-xl hover:border-red-200 hover:bg-red-50 hover:text-red-600 hover:shadow-md transition-all duration-200"
+                      title="Logout"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
                 
-                {/* Mobile Menu Toggle */}
                 <button 
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                   className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 text-slate-600 shadow-sm backdrop-blur-xl lg:hidden"
@@ -171,7 +177,6 @@ export default function DashboardShell({ children }) {
             </div>
           </div>
 
-          {/* Mobile Sidebar Overlay */}
           {isMobileMenuOpen && (
             <motion.div 
               initial={{ opacity: 0, x: -20 }}

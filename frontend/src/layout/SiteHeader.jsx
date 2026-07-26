@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight, LogOut } from "lucide-react"; // Added LogOut import
 import { motion, AnimatePresence } from "framer-motion";
 import Button from "../components/ui/Button.jsx";
 import { navigationLinks } from "../constants/site.js";
@@ -10,6 +10,7 @@ import logoMark from "../assets/scholaros-mark.svg";
 export default function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -26,15 +27,20 @@ export default function SiteHeader() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  useEffect(() => {
+    setIsLoggedIn(localStorage.getItem("scholaros_user") === "true");
+  }, []);
+
+  // UPDATED: Logout handler for the Landing Page header
+  const handleLogout = () => {
+    localStorage.removeItem("scholaros_user");
+    setIsLoggedIn(false);
+    // Redirect to "/" (landing page) after logout
+    window.location.href = "/"; 
+  };
+
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6 lg:px-8">
-      {/* 
-        Liquid Glass Navbar:
-        - bg-white/10: Extremely high transparency to let the background grid and gradients bleed through.
-        - backdrop-blur-2xl: Maximum frosted glass effect.
-        - shadow-[0_8px_32px_rgba(255,255,255,0.1)]: Adds a subtle glowing rim light (liquid border effect).
-        - transition-all duration-500: Smoothly fades in and out while scrolling.
-      */}
       <div
         className={cn(
           "mx-auto max-w-7xl rounded-full border border-transparent transition-all duration-500 ease-out",
@@ -64,16 +70,33 @@ export default function SiteHeader() {
             ))}
           </nav>
 
+          {/* UPDATED: Desktop Actions - Added Logout button for logged-in users */}
           <div className="hidden items-center gap-2 lg:flex">
-            <Button to="/login" variant="ghost">Login</Button>
-            <Button to="/register" variant="secondary">Register</Button>
-            <Button to="/register" className="gap-2">
-              Start Research
-              <ArrowRight className="h-4 w-4" />
-            </Button>
+            {isLoggedIn ? (
+              <>
+                <Button to="/dashboard" variant="primary" className="gap-2 px-6 py-3">
+                  Dashboard
+                </Button>
+                <button
+                  onClick={handleLogout}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 p-0 text-slate-500 shadow-sm backdrop-blur-xl hover:border-red-200 hover:bg-red-50 hover:text-red-600 hover:shadow-md transition-all duration-200"
+                  title="Logout"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </>
+            ) : (
+              <>
+                <Button to="/login" variant="ghost">Login</Button>
+                <Button to="/register" variant="secondary">Register</Button>
+                <Button to="/register" className="gap-2">
+                  Start Research
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </>
+            )}
           </div>
 
-          {/* Mobile toggle button - also updated to liquid glass */}
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
@@ -103,9 +126,26 @@ export default function SiteHeader() {
                     {item.label}
                   </a>
                 ))}
+                
+                {/* UPDATED: Mobile Actions - Added Logout button for logged-in users */}
                 <div className="mt-2 grid gap-2">
-                  <Button to="/login" variant="secondary">Login</Button>
-                  <Button to="/register">Start Research</Button>
+                  {isLoggedIn ? (
+                    <>
+                      <Button to="/dashboard" variant="primary">Dashboard</Button>
+                      <button 
+                        onClick={handleLogout}
+                        className="flex items-center justify-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-3 text-sm font-medium text-slate-600 shadow-sm backdrop-blur-xl hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Button to="/login" variant="secondary">Login</Button>
+                      <Button to="/register">Start Research</Button>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>

@@ -12,6 +12,13 @@ const initialState = {
   remember: true,
 };
 
+// Dummy credentials definition
+const ALLOWED_USERS = {
+  "tanjim@gmail.com": "12345678",
+  "nazifa@gmail.com": "12345678",
+  "asif@gmail.com": "12345678",
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState(initialState);
@@ -24,20 +31,20 @@ export default function LoginPage() {
     []
   );
 
-  const validate = () => {
-    const nextErrors = {};
-    if (!/^\S+@\S+\.\S+$/.test(form.email)) nextErrors.email = "Enter a valid institutional email address.";
-    if (form.password.trim().length < 6) nextErrors.password = "Password must be at least 6 characters.";
-    return nextErrors;
-  };
-
   const handleSubmit = (event) => {
     event.preventDefault();
-    const nextErrors = validate();
-    setErrors(nextErrors);
+    setErrors({});
 
-    if (Object.keys(nextErrors).length === 0) {
+    const { email, password } = form;
+
+    // Check if the email exists in our dummy list and the password matches
+    if (ALLOWED_USERS[email] && ALLOWED_USERS[email] === password) {
+      // UPDATED: Set a mock session flag in localStorage
+      localStorage.setItem("scholaros_user", "true");
       navigate("/dashboard");
+    } else {
+      // Set a generic error for security
+      setErrors({ general: "Invalid email or password. Please try again." });
     }
   };
 
@@ -51,6 +58,18 @@ export default function LoginPage() {
       footerAction={<Link to="/register" className="font-semibold text-blue-700 hover:text-blue-800">Create one</Link>}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
+        
+        {/* General Error Message */}
+        {errors.general && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-600 text-center"
+          >
+            {errors.general}
+          </motion.div>
+        )}
+
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">Email address</label>
           <div className="relative">
@@ -60,10 +79,9 @@ export default function LoginPage() {
               value={form.email}
               onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
               placeholder="you@institution.edu"
-              className={cn(inputClass, "pl-11", errors.email && "border-rose-300 focus:border-rose-300 focus:ring-rose-100")}
+              className={cn(inputClass, "pl-11", errors.general && "border-rose-300 focus:border-rose-300 focus:ring-rose-100")}
             />
           </div>
-          {errors.email && <p className="mt-2 text-sm text-rose-600">{errors.email}</p>}
         </div>
 
         <div>
@@ -75,7 +93,7 @@ export default function LoginPage() {
               value={form.password}
               onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
               placeholder="Enter your password"
-              className={cn(inputClass, "pl-11 pr-11", errors.password && "border-rose-300 focus:border-rose-300 focus:ring-rose-100")}
+              className={cn(inputClass, "pl-11 pr-11", errors.general && "border-rose-300 focus:border-rose-300 focus:ring-rose-100")}
             />
             <button
               type="button"
@@ -86,7 +104,6 @@ export default function LoginPage() {
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          {errors.password && <p className="mt-2 text-sm text-rose-600">{errors.password}</p>}
         </div>
 
         <div className="flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
@@ -110,7 +127,12 @@ export default function LoginPage() {
           transition={{ delay: 0.2 }}
           className="rounded-[28px] border border-blue-100 bg-blue-50/70 p-5 text-sm leading-7 text-slate-600"
         >
-          Demo credentials are not required. This frontend prototype uses local state only and routes directly to the dashboard preview after validation.
+          <p className="font-semibold text-slate-800 mb-1">Demo Credentials:</p>
+          <div className="space-y-1 text-slate-500 text-xs">
+            <p>tanjim@gmail.com / 12345678</p>
+            <p>nazifa@gmail.com / 12345678</p>
+            <p>asif@gmail.com / 12345678</p>
+          </div>
         </motion.div>
       </form>
     </AuthLayout>
