@@ -1,8 +1,315 @@
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, X } from "lucide-react";
+import { cn } from "../../utils/cn.js";
+
+// Mock Data
+const researchersData = [
+  {
+    initials: "LM",
+    name: "Dr. Leila Morgan",
+    role: "Lead Scientist",
+    field: "Environmental AI · CS Dept.",
+    department: "Computer Science",
+    interests: ["Climate AI", "Graph ML"],
+    papers: 14,
+    projects: 6,
+    citations: 312,
+    following: true,
+  },
+  {
+    initials: "NM",
+    name: "Prof. Nadia Mensah",
+    role: "Associate Professor",
+    field: "Health Informatics",
+    department: "Medicine",
+    interests: ["Federated ML", "Imaging"],
+    papers: 22,
+    projects: 9,
+    citations: 540,
+  },
+  {
+    initials: "JR",
+    name: "Jonas Richter",
+    role: "Data Engineer",
+    field: "Research Systems",
+    department: "Engineering",
+    interests: ["Pipelines", "MLOps"],
+    papers: 7,
+    projects: 11,
+    citations: 88,
+  },
+  {
+    initials: "YS",
+    name: "Dr. Yuki Sato",
+    role: "Research Fellow",
+    field: "Cybersecurity",
+    department: "Computer Science",
+    interests: ["Cryptography", "PQC"],
+    papers: 19,
+    projects: 5,
+    citations: 276,
+  },
+  {
+    initials: "AP",
+    name: "Aarav Patel",
+    role: "PhD Candidate",
+    field: "Environmental AI",
+    department: "Engineering",
+    interests: ["Climate Modeling"],
+    papers: 4,
+    projects: 3,
+    citations: 41,
+  },
+  {
+    initials: "SC",
+    name: "Sofia Chen",
+    role: "Research Assistant",
+    field: "Environmental AI",
+    department: "Computer Science",
+    interests: ["Data Systems"],
+    papers: 3,
+    projects: 4,
+    citations: 19,
+  },
+  {
+    initials: "EP",
+    name: "Elena Park",
+    role: "Postdoctoral Researcher",
+    field: "Research Systems",
+    department: "Social Sciences",
+    interests: ["Knowledge Graphs"],
+    papers: 9,
+    projects: 2,
+    citations: 64,
+  },
+  {
+    initials: "IH",
+    name: "Ibrahim Hassan",
+    role: "Research Fellow",
+    field: "Cybersecurity",
+    department: "Computer Science",
+    interests: ["Identity Systems"],
+    papers: 11,
+    projects: 4,
+    citations: 102,
+  },
+];
+
+const departments = [
+  "All Departments",
+  "Computer Science",
+  "Medicine",
+  "Engineering",
+  "Social Sciences",
+];
+
 export default function Researchers() {
+  const [department, setDepartment] = useState("All Departments");
+  const [query, setQuery] = useState("");
+  const [followings, setFollowings] = useState(
+    () =>
+      new Set(researchersData.filter((r) => r.following).map((r) => r.name)),
+  );
+  const [selectedResearcher, setSelectedResearcher] = useState(null);
+
+  // Filter Logic
+  const visibleResearchers = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return researchersData.filter((researcher) => {
+      const inDepartment =
+        department === "All Departments" ||
+        researcher.department === department;
+      const searchable = [
+        researcher.name,
+        researcher.role,
+        researcher.field,
+        ...researcher.interests,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return inDepartment && (!needle || searchable.includes(needle));
+    });
+  }, [department, query]);
+
+  const toggleFollow = (name) => {
+    setFollowings((current) => {
+      const next = new Set(current);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
   return (
-    <div className="text-center py-20 text-slate-500">
-      <h2 className="text-3xl font-semibold text-slate-900">Researchers</h2>
-      <p className="mt-2">Researchers dashboard is coming soon.</p>
+    <div className="space-y-6 pb-8 w-full min-w-0 relative">
+      {/* Page Header & Search */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="text-xs text-slate-500 font-medium mb-1">
+            Directory
+          </div>
+          <h1 className="text-3xl font-extrabold text-[#0f111a] tracking-tight">
+            Researchers
+          </h1>
+        </div>
+        <div className="relative w-full sm:w-80">
+          <Search
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+            size={16}
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            type="search"
+            placeholder="Search by name, interest..."
+            className="w-full rounded-full border border-slate-200/60 bg-white/80 pl-10 pr-4 py-3 text-sm text-slate-700 shadow-sm outline-none backdrop-blur-md placeholder:text-slate-400 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-200 transition-all"
+          />
+        </div>
+      </div>
+
+      {/* Departments Filter Pills */}
+      <div className="flex flex-wrap gap-2">
+        {departments.map((item) => (
+          <button
+            key={item}
+            onClick={() => setDepartment(item)}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer",
+              department === item
+                ? "bg-linear-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-400/30"
+                : "bg-white/70 border border-slate-200/60 text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800",
+            )}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      {/* Researchers Grid */}
+      {visibleResearchers.length > 0 ? (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {visibleResearchers.map((researcher) => {
+            const isFollowing = followings.has(researcher.name);
+            return (
+              <div
+                key={researcher.name}
+                onClick={() => setSelectedResearcher(researcher)}
+                className="group relative flex flex-col items-center rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 p-7 shadow-[0_4px_30px_rgba(0,0,0,0.04)] transition-all hover:shadow-lg hover:border-indigo-200/80 cursor-pointer w-full"
+              >
+                {/* Avatar */}
+                <div className="h-20 w-20 shrink-0 rounded-full bg-linear-to-br from-indigo-500 to-cyan-400 flex items-center justify-center text-2xl font-bold text-white shadow-lg shadow-indigo-400/20 mb-4">
+                  {researcher.initials}
+                </div>
+
+                {/* Info */}
+                <h3 className="text-lg font-extrabold text-[#0f111a] text-center">
+                  {researcher.name}
+                </h3>
+                <p className="text-sm text-slate-500 text-center">
+                  {researcher.role}
+                </p>
+                <p className="text-xs text-slate-400 text-center">
+                  {researcher.field}
+                </p>
+
+                {/* Interests */}
+                <div className="mt-3 flex flex-wrap justify-center gap-2">
+                  {researcher.interests.map((interest) => (
+                    <span
+                      key={interest}
+                      className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-medium text-slate-600"
+                    >
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Stats */}
+                <div className="mt-5 w-full border-t border-slate-200/60 pt-4 grid grid-cols-3 text-center gap-2">
+                  {[
+                    [researcher.papers, "Papers"],
+                    [researcher.projects, "Projects"],
+                    [researcher.citations, "Citations"],
+                  ].map(([value, label]) => (
+                    <div key={label}>
+                      <div className="text-lg font-extrabold leading-none text-[#0f111a]">
+                        {value}
+                      </div>
+                      <div className="mt-1 text-[10px] uppercase tracking-[0.08em] text-slate-400">
+                        {label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Follow Button - Stopping propagation so it doesn't trigger the modal */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFollow(researcher.name);
+                  }}
+                  className={`mt-5 w-full rounded-full py-2.5 text-sm font-bold transition-all duration-200 ${
+                    isFollowing
+                      ? "border border-slate-200 bg-white/60 text-slate-500 hover:bg-white hover:border-indigo-200 hover:text-indigo-600"
+                      : "bg-linear-to-r from-indigo-500 to-cyan-400 text-white shadow-md shadow-indigo-400/20 hover:shadow-lg hover:-translate-y-0.5"
+                  }`}
+                >
+                  {isFollowing ? "Following" : "Follow"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="rounded-[28px] bg-white/60 border border-white/40 py-20 text-center text-slate-500">
+          No researchers match your search.
+        </div>
+      )}
+
+      {/* PROFILE MODAL */}
+      <AnimatePresence>
+        {selectedResearcher && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-6"
+            onClick={() => setSelectedResearcher(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md overflow-hidden rounded-[28px] bg-white/90 backdrop-blur-xl border border-white/60 p-8 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedResearcher(null)}
+                className="absolute right-4 top-4 text-slate-400 hover:text-slate-800 transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="flex flex-col items-center text-center">
+                <div className="h-24 w-24 rounded-full bg-linear-to-br from-indigo-500 to-cyan-400 flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-indigo-400/20 mb-4">
+                  {selectedResearcher.initials}
+                </div>
+                <h2 className="text-2xl font-extrabold text-[#0f111a]">
+                  {selectedResearcher.name}
+                </h2>
+                <p className="text-sm text-slate-500">
+                  {selectedResearcher.role}
+                </p>
+                <p className="mt-1 text-sm text-slate-400">
+                  {selectedResearcher.field}
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
