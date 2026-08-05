@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Bell,
   BookOpenText,
@@ -30,6 +30,7 @@ const accountItems = [
 ];
 
 export default function DashboardShell() {
+  const location = useLocation(); // Used to track the current route for breadcrumb
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef(null);
@@ -53,6 +54,17 @@ export default function DashboardShell() {
   const handleLogout = () => {
     localStorage.removeItem("scholaros_user");
     window.location.href = "/";
+  };
+
+  // Dynamically generate the breadcrumb title based on the active route
+  const getBreadcrumbTitle = (pathname) => {
+    if (pathname === "/dashboard") return "Dashboard";
+    if (pathname === "/dashboard/projects") return "Projects";
+    if (pathname === "/dashboard/papers") return "Research Papers";
+    if (pathname === "/dashboard/researchers") return "Researchers";
+    if (pathname === "/dashboard/notifications") return "Notifications";
+    if (pathname === "/dashboard/settings") return "Settings";
+    return "Dashboard"; // fallback
   };
 
   return (
@@ -185,11 +197,11 @@ export default function DashboardShell() {
       <main className="flex-1 overflow-y-auto relative">
         {/* TOP NAVBAR */}
         <header className="sticky top-0 z-30 px-8 py-5 flex items-center justify-between bg-[#eceff5]/80 backdrop-blur-xl border-b border-slate-200/40">
-          <div>
-            <div className="text-xs text-slate-400 font-medium">
-              Home /{" "}
-              <span className="text-slate-700 font-semibold">Dashboard</span>
-            </div>
+          <div className="text-xs text-slate-400 font-medium">
+            Home /{" "}
+            <span className="text-slate-700 font-semibold">
+              {getBreadcrumbTitle(location.pathname)}
+            </span>
           </div>
 
           <div className="flex-1 max-w-xl mx-6">
