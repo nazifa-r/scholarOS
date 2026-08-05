@@ -32,11 +32,8 @@ const accountItems = [
 export default function DashboardShell() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-
-  // Ref for Notification Dropdown to handle click-outside
   const notifRef = useRef(null);
 
-  // Close Notification when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
@@ -44,12 +41,9 @@ export default function DashboardShell() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [notifRef]);
 
-  // Listen for the "closeNotif" event triggered by the Filter dropdown in Overview
   useEffect(() => {
     const handleCloseNotif = () => setIsNotifOpen(false);
     window.addEventListener("closeNotif", handleCloseNotif);
@@ -218,7 +212,6 @@ export default function DashboardShell() {
               <button
                 onClick={() => {
                   setIsNotifOpen(!isNotifOpen);
-                  // Force close the Filter dropdown via custom event
                   window.dispatchEvent(new CustomEvent("closeFilter"));
                 }}
                 className="h-10 w-10 rounded-full bg-white/70 border border-white/30 flex items-center justify-center shadow-sm hover:shadow-md transition-shadow text-slate-500"
@@ -285,7 +278,6 @@ export default function DashboardShell() {
           </div>
         </header>
 
-        {/* SHIFTED TO THE MIDDLE: max-w-7xl mx-auto applied here */}
         <div className="px-8 py-7 space-y-7 max-w-7xl mx-auto">
           <Outlet />
         </div>
