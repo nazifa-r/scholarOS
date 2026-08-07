@@ -1,19 +1,17 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Sparkles,
   ArrowRight,
   RotateCw,
   ChevronDown,
   Plus,
-  X,
   Bookmark,
   BookmarkCheck,
-  UploadCloud,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "../../utils/cn.js";
+import { cn } from "../../utils/cn.js"; // Corrected path to ../../utils/cn.js
 
-// Mock Data
 const papers = [
   {
     id: "RP-2048",
@@ -100,7 +98,6 @@ const trending = [
   },
 ];
 
-// Reusable Chip Component
 function Chip({ label, active = false, onClick }) {
   return (
     <button
@@ -118,22 +115,15 @@ function Chip({ label, active = false, onClick }) {
 }
 
 export default function Papers() {
+  const navigate = useNavigate();
   const [category, setCategory] = useState("All");
   const [year, setYear] = useState("2026");
   const [status, setStatus] = useState(null);
-
-  // Modal State
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-
-  // Bookmark State
   const [bookmarkedIds, setBookmarkedIds] = useState(new Set());
-
-  // Sort State & Dropdown Ref
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [sortBy, setSortBy] = useState("Most Recent");
   const sortRef = useRef(null);
 
-  // Close Sort Dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (sortRef.current && !sortRef.current.contains(event.target)) {
@@ -146,24 +136,18 @@ export default function Papers() {
 
   const toggleBookmark = (id) => {
     const newSet = new Set(bookmarkedIds);
-    if (newSet.has(id)) {
-      newSet.delete(id);
-    } else {
-      newSet.add(id);
-    }
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
     setBookmarkedIds(newSet);
   };
 
-  // Functional Sorting Logic
   const sortedPapers = useMemo(() => {
     const papersCopy = [...papers];
     switch (sortBy) {
       case "Most Recent":
-        return papersCopy.sort((a, b) => {
-          const numA = parseInt(a.id.split("-")[1]);
-          const numB = parseInt(b.id.split("-")[1]);
-          return numB - numA; // Descending
-        });
+        return papersCopy.sort(
+          (a, b) => parseInt(b.id.split("-")[1]) - parseInt(a.id.split("-")[1]),
+        );
       case "Most Cited":
         return papersCopy.sort(
           (a, b) => parseInt(b.citations) - parseInt(a.citations),
@@ -177,76 +161,6 @@ export default function Papers() {
 
   return (
     <div className="space-y-6 pb-8 w-full min-w-0 relative">
-      {/* UPLOAD PAPER MODAL */}
-      <AnimatePresence>
-        {isUploadModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md"
-            onClick={() => setIsUploadModalOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 10 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 10 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-lg bg-white rounded-[24px] p-8 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setIsUploadModalOpen(false)}
-                className="absolute right-4 top-4 text-slate-400 hover:text-slate-800 transition-colors"
-              >
-                <X size={20} />
-              </button>
-
-              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-indigo-50 to-blue-50 text-indigo-500">
-                <UploadCloud size={24} />
-              </div>
-              <h2 className="text-2xl font-extrabold text-[#0f111a] mb-1">
-                Upload Research Paper
-              </h2>
-              <p className="text-sm text-slate-500 mb-6">
-                Upload your manuscript, pre-print, or dataset to the repository.
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-[#0f111a] mb-1">
-                    Paper Title
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Adaptive Graph Models..."
-                    className="w-full rounded-xl border border-slate-200/60 bg-slate-50/50 px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-[#0f111a] mb-1">
-                    Abstract
-                  </label>
-                  <textarea
-                    rows={4}
-                    placeholder="Enter a brief abstract..."
-                    className="w-full rounded-xl border border-slate-200/60 bg-slate-50/50 px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all resize-none"
-                  />
-                </div>
-                <div className="mt-2 flex flex-col sm:flex-row gap-3">
-                  <button className="flex-1 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-4 py-3 text-sm font-medium text-slate-500 hover:border-indigo-400 hover:text-indigo-500 transition-colors">
-                    Choose File (PDF/DOCX)
-                  </button>
-                  <button className="flex-1 rounded-xl bg-linear-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold shadow-md shadow-indigo-400/20 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
-                    Submit Paper
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Page Header */}
       <div className="flex items-end justify-between w-full">
         <div>
@@ -257,8 +171,9 @@ export default function Papers() {
             Research Papers
           </h1>
         </div>
+
         <button
-          onClick={() => setIsUploadModalOpen(true)}
+          onClick={() => navigate("/dashboard/upload")}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-linear-to-r from-indigo-500 to-cyan-400 text-white text-sm font-bold shadow-lg shadow-indigo-400/30 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 active:scale-95"
         >
           <Plus size={16} /> Upload Paper
@@ -306,12 +221,10 @@ export default function Papers() {
       <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start w-full min-w-0">
         {/* LEFT SIDEBAR: Filters & Trending Topics */}
         <div className="space-y-6 w-full min-w-0">
-          {/* Filter Results */}
           <div className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-7">
             <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase mb-5">
               Filter Results
             </div>
-
             <div className="text-sm font-bold text-[#0f111a] mb-2">
               Search by title
             </div>
@@ -320,7 +233,6 @@ export default function Papers() {
               placeholder="Search papers…"
               className="w-full px-4 py-2.5 rounded-xl bg-white/80 border border-slate-200/60 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all mb-6"
             />
-
             <div className="text-sm font-bold text-[#0f111a] mb-3">
               Category
             </div>
@@ -334,7 +246,6 @@ export default function Papers() {
                 />
               ))}
             </div>
-
             <div className="text-sm font-bold text-[#0f111a] mb-3">
               Department
             </div>
@@ -343,7 +254,6 @@ export default function Papers() {
                 <Chip key={d} label={d} />
               ))}
             </div>
-
             <div className="text-sm font-bold text-[#0f111a] mb-3">
               Publication Year
             </div>
@@ -357,7 +267,6 @@ export default function Papers() {
                 />
               ))}
             </div>
-
             <div className="text-sm font-bold text-[#0f111a] mb-3">Status</div>
             <div className="flex flex-wrap gap-2">
               {["Draft", "In Revision", "Published"].map((s) => (
@@ -370,8 +279,6 @@ export default function Papers() {
               ))}
             </div>
           </div>
-
-          {/* AI Trending Topics */}
           <div className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-7">
             <div className="flex items-center gap-2 mb-5">
               <Sparkles size={14} className="text-amber-400" />
@@ -407,9 +314,8 @@ export default function Papers() {
           </div>
         </div>
 
-        {/* RIGHT CONTENT: Paper Cards - Expanding to fill the rest of the width */}
+        {/* RIGHT CONTENT: Paper Cards */}
         <div className="space-y-5 w-full min-w-0">
-          {/* Sort & Results info */}
           <div
             className="flex items-center justify-between relative"
             ref={sortRef}
@@ -417,8 +323,6 @@ export default function Papers() {
             <div className="text-sm text-slate-500 font-medium">
               Showing 4 of 10,204 papers
             </div>
-
-            {/* FUNCTIONAL SORT DROPDOWN */}
             <div className="relative z-20">
               <button
                 onClick={() => setIsSortOpen(!isSortOpen)}
@@ -430,7 +334,6 @@ export default function Papers() {
                   className={`transition-transform duration-200 ${isSortOpen ? "rotate-180" : ""}`}
                 />
               </button>
-
               <AnimatePresence>
                 {isSortOpen && (
                   <motion.div
@@ -458,21 +361,16 @@ export default function Papers() {
             </div>
           </div>
 
-          {/* Paper Cards Mapping - Cards are w-full to stretch with active hover states */}
           {sortedPapers.map((p, idx) => (
             <div
               key={p.id}
               className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-7 transition-all hover:shadow-lg hover:border-indigo-200/80 group/card w-full"
             >
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start w-full">
-                {/* PDF Icon */}
                 <div className="h-14 w-14 shrink-0 rounded-2xl bg-linear-to-br from-indigo-50 to-blue-50 border border-indigo-100/60 flex items-center justify-center text-xs font-extrabold text-indigo-500 shadow-sm">
                   PDF
                 </div>
-
-                {/* Middle Content - Spans the remaining full width */}
                 <div className="flex-1 min-w-0 space-y-3">
-                  {/* Badges */}
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-medium px-2.5 py-1 rounded-full text-slate-600 bg-slate-100">
                       {p.category}
@@ -483,25 +381,17 @@ export default function Papers() {
                       {p.status}
                     </span>
                   </div>
-
-                  {/* Title - Clickable with hover effect */}
                   <h3 className="text-xl font-extrabold text-[#0f111a] tracking-tight leading-snug hover:text-indigo-600 transition-colors duration-200 cursor-pointer">
                     {p.title}
                   </h3>
-
-                  {/* Authors & ID */}
                   <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
                     <span>{p.authors}</span>
                     <span className="text-slate-300">·</span>
                     <span className="font-mono text-xs">{p.id}</span>
                   </div>
-
-                  {/* Abstract */}
                   <p className="text-[15px] text-slate-500 leading-relaxed">
                     {p.abstract}
                   </p>
-
-                  {/* AI Summary Block */}
                   {p.aiSummary ? (
                     <div className="mt-4 rounded-2xl border-2 border-dashed border-indigo-200/70 bg-linear-to-r from-indigo-50/60 to-violet-50/60 p-5 relative">
                       <div className="flex items-center justify-between mb-3">
@@ -524,8 +414,6 @@ export default function Papers() {
                     </button>
                   )}
                 </div>
-
-                {/* Right Side - Stats & Action Icon */}
                 <div className="flex shrink-0 items-center gap-6 pl-0 sm:pl-4">
                   <div className="text-center">
                     <div className="text-xl font-extrabold text-[#0f111a]">
