@@ -8,15 +8,10 @@ import { cn } from "../utils/cn.js";
 const initialState = {
   name: "",
   institution: "",
-  department: "",
-  role: "Doctoral Researcher",
-  interests: "",
   email: "",
   password: "",
   confirmPassword: "",
 };
-
-const roles = ["Doctoral Researcher", "Faculty Advisor", "Research Associate", "Principal Investigator", "Lab Coordinator"];
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -33,7 +28,7 @@ export default function RegisterPage() {
 
   const validate = () => {
     const nextErrors = {};
-    ["name", "institution", "department", "interests"].forEach((field) => {
+    ["name", "institution"].forEach((field) => {
       if (!form[field].trim()) nextErrors[field] = "This field is required.";
     });
     if (!/^\S+@\S+\.\S+$/.test(form.email)) nextErrors.email = "Enter a valid email address.";
@@ -57,7 +52,7 @@ export default function RegisterPage() {
   return (
     <AuthLayout
       title="Create your ScholarOS account"
-      subtitle="Set up your research identity and start collaborating through a premium publication workflow."
+      subtitle="Set up your research identity — you can complete the rest of your profile after signing in."
       sideTitle="Launch a research workspace your team will actually enjoy using."
       sideDescription="ScholarOS is where publication pipelines, repositories, and interdisciplinary collaboration become beautifully manageable."
       footerText="Already have an account?"
@@ -94,44 +89,6 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Department</label>
-            <input
-              value={form.department}
-              onChange={(event) => setForm((current) => ({ ...current, department: event.target.value }))}
-              placeholder="Computational Climate Systems"
-              className={cn(inputClass, errors.department && "border-rose-300 focus:border-rose-300 focus:ring-rose-100")}
-            />
-            {renderError("department")}
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Role</label>
-            <select
-              value={form.role}
-              onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))}
-              className={inputClass}
-            >
-              {roles.map((role) => (
-                <option key={role}>{role}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">Research interests</label>
-          <textarea
-            value={form.interests}
-            onChange={(event) => setForm((current) => ({ ...current, interests: event.target.value }))}
-            placeholder="Graph learning, climate resilience, scenario planning, interdisciplinary collaboration"
-            rows={4}
-            className={cn(inputClass, "resize-none", errors.interests && "border-rose-300 focus:border-rose-300 focus:ring-rose-100")}
-          />
-          {renderError("interests")}
-        </div>
-
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">Email address</label>
           <div className="relative">
@@ -147,7 +104,7 @@ export default function RegisterPage() {
           {renderError("email")}
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="space-y-5">
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Password</label>
             <div className="relative">
