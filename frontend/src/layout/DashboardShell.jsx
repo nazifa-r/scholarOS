@@ -3,11 +3,9 @@ import {
   Bell,
   BookOpenText,
   FolderKanban,
-  Home,
   LayoutDashboard,
   Search,
   Settings,
-  Sparkles,
   Users2,
   Menu,
   LogOut,
@@ -15,8 +13,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "../utils/cn.js";
-import { useNotifications } from "../contexts/NotificationContext";
-
+import { useNotifications } from "../contexts/NotificationContext.jsx";
 
 const workspaceItems = [
   { label: "Overview", icon: LayoutDashboard, to: "/dashboard" },
@@ -35,8 +32,6 @@ export default function DashboardShell() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef(null);
-
- 
   const { unreadCount } = useNotifications();
 
   useEffect(() => {
@@ -60,7 +55,6 @@ export default function DashboardShell() {
     window.location.href = "/";
   };
 
-  // Dynamically generate the breadcrumb title based on the active route
   const getBreadcrumbTitle = (pathname) => {
     if (pathname === "/dashboard") return "Dashboard";
     if (pathname === "/dashboard/projects") return "Projects";
@@ -68,13 +62,12 @@ export default function DashboardShell() {
     if (pathname === "/dashboard/researchers") return "Researchers";
     if (pathname === "/dashboard/notifications") return "Notifications";
     if (pathname === "/dashboard/settings") return "Settings";
-    return "Dashboard"; // fallback
+    return "Dashboard";
   };
 
   return (
-    <div className="min-h-screen bg-[#eceff5] flex text-[#1a1b23]">
-      {/* SIDEBAR */}
-      <aside className="w-[260px] shrink-0 bg-[#0f111a] text-white flex flex-col h-screen sticky top-0 overflow-hidden">
+    <div className="min-h-screen bg-[var(--bg-app)] flex text-[var(--text-primary)]">
+      <aside className="w-[260px] shrink-0 bg-[var(--bg-sidebar)] text-white flex flex-col h-screen sticky top-0 overflow-hidden">
         <div className="px-6 pt-7 pb-5">
           <Link to="/" className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-linear-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
@@ -82,7 +75,7 @@ export default function DashboardShell() {
             </div>
             <div>
               <div className="font-bold text-base leading-tight">ScholarOS</div>
-              <div className="text-[11px] text-slate-400 tracking-[0.15em] uppercase">
+              <div className="text-[11px] text-[var(--text-muted)] tracking-[0.15em] uppercase">
                 Enterprise Suite
               </div>
             </div>
@@ -90,19 +83,20 @@ export default function DashboardShell() {
         </div>
 
         <nav className="px-4 flex-1 space-y-1 overflow-y-auto pb-4">
-          <div className="text-[10px] text-slate-500 font-semibold tracking-[0.18em] uppercase mb-3 px-2 mt-4">
+          <div className="text-[10px] text-[var(--text-muted)] font-semibold tracking-[0.18em] uppercase mb-3 px-2 mt-4">
             Workspace
           </div>
           {workspaceItems.map(({ label, icon: Icon, to }) => (
             <NavLink
               key={label}
               to={to}
+              end={label === "Overview"}
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200",
                   isActive
                     ? "bg-white/5 ring-1 ring-white/10 text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]"
-                    : "text-slate-300 hover:text-white hover:bg-white/5",
+                    : "text-[var(--text-secondary)] hover:text-white hover:bg-white/5",
                 )
               }
             >
@@ -121,7 +115,7 @@ export default function DashboardShell() {
                       className={
                         isActive
                           ? "text-white"
-                          : "text-slate-500 group-hover:text-white"
+                          : "text-[var(--text-muted)] group-hover:text-white"
                       }
                     />
                   </span>
@@ -131,7 +125,7 @@ export default function DashboardShell() {
             </NavLink>
           ))}
 
-          <div className="text-[10px] text-slate-500 font-semibold tracking-[0.18em] uppercase mt-8 mb-3 px-2">
+          <div className="text-[10px] text-[var(--text-muted)] font-semibold tracking-[0.18em] uppercase mt-8 mb-3 px-2">
             Account
           </div>
           {accountItems.map(({ label, icon: Icon, to }) => (
@@ -143,7 +137,7 @@ export default function DashboardShell() {
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                   isActive
                     ? "bg-white/5 ring-1 ring-white/10 text-white"
-                    : "text-slate-400 hover:text-white hover:bg-white/5",
+                    : "text-[var(--text-secondary)] hover:text-white hover:bg-white/5",
                 )
               }
             >
@@ -152,7 +146,7 @@ export default function DashboardShell() {
                   <span
                     className={cn(
                       "h-2 w-2 rounded-full",
-                      isActive ? "bg-indigo-400" : "bg-slate-700",
+                      isActive ? "bg-indigo-400" : "bg-[var(--text-muted)]",
                     )}
                   />
                   {label}
@@ -162,7 +156,6 @@ export default function DashboardShell() {
           ))}
         </nav>
 
-        {/* Promotional Card & User Profile Footer */}
         <div className="p-4 shrink-0">
           <div className="rounded-2xl bg-linear-to-br from-indigo-600/30 to-violet-600/20 border border-white/5 p-5 backdrop-blur-xl">
             <h4 className="font-bold text-white text-sm mb-1">
@@ -197,13 +190,11 @@ export default function DashboardShell() {
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
       <main className="flex-1 overflow-y-auto relative">
-        {/* TOP NAVBAR */}
-        <header className="sticky top-0 z-30 px-8 py-5 flex items-center justify-between bg-[#eceff5]/80 backdrop-blur-xl border-b border-slate-200/40">
-          <div className="text-xs text-slate-400 font-medium">
+        <header className="sticky top-0 z-30 px-8 py-5 flex items-center justify-between bg-[var(--bg-surface)] backdrop-blur-xl border-b border-[var(--border)]">
+          <div className="text-xs text-[var(--text-muted)] font-medium">
             Home /{" "}
-            <span className="text-slate-700 font-semibold">
+            <span className="text-[var(--text-primary)] font-semibold">
               {getBreadcrumbTitle(location.pathname)}
             </span>
           </div>
@@ -211,31 +202,28 @@ export default function DashboardShell() {
           <div className="flex-1 max-w-xl mx-6">
             <div className="relative">
               <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
                 size={16}
               />
               <input
                 type="text"
                 placeholder="Search papers, projects..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/60 border border-white/20 shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-full bg-[var(--bg-surface-elevated)] border border-[var(--border)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-transparent transition-all"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-4 relative">
-            {/* NOTIFICATION BELL WITH DYNAMIC BADGE */}
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => {
                   setIsNotifOpen(!isNotifOpen);
                   window.dispatchEvent(new CustomEvent("closeFilter"));
                 }}
-                className="h-10 w-10 rounded-full bg-white/70 border border-white/30 flex items-center justify-center shadow-sm hover:shadow-md transition-shadow text-slate-500"
+                className="h-10 w-10 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] flex items-center justify-center shadow-sm hover:shadow-md transition-shadow text-[var(--text-muted)]"
               >
                 <Bell size={18} />
               </button>
-
-              {/* ✅ Dynamic badge */}
               {unreadCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-indigo-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
                   {unreadCount}
@@ -249,33 +237,33 @@ export default function DashboardShell() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -5 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-40"
+                    className="absolute right-0 top-full mt-2 w-72 bg-[var(--bg-surface)] rounded-2xl shadow-xl border border-[var(--border)] p-4 z-40"
                   >
-                    <div className="text-sm font-bold text-slate-800 mb-3">
+                    <div className="text-sm font-bold text-[var(--text-primary)] mb-3">
                       Notifications
                     </div>
                     <div className="space-y-3">
-                      <div className="p-3 bg-indigo-50/50 rounded-lg border border-indigo-100/50">
-                        <div className="text-sm font-medium text-slate-900">
+                      <div className="p-3 bg-indigo-50/50 rounded-lg border border-[var(--border)]">
+                        <div className="text-sm font-medium text-[var(--text-primary)]">
                           New review added
                         </div>
-                        <div className="text-xs text-slate-500 mt-0.5">
+                        <div className="text-xs text-[var(--text-secondary)] mt-0.5">
                           Prof. Mensah commented on Methods.
                         </div>
                       </div>
-                      <div className="p-3 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
-                        <div className="text-sm font-medium text-slate-900">
+                      <div className="p-3 hover:bg-[var(--bg-surface)] rounded-lg transition-colors cursor-pointer">
+                        <div className="text-sm font-medium text-[var(--text-primary)]">
                           Deadline approaching
                         </div>
-                        <div className="text-xs text-slate-500 mt-0.5">
+                        <div className="text-xs text-[var(--text-secondary)] mt-0.5">
                           BlueGrid Climate Archive due in 5d.
                         </div>
                       </div>
-                      <div className="p-3 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
-                        <div className="text-sm font-medium text-slate-900">
+                      <div className="p-3 hover:bg-[var(--bg-surface)] rounded-lg transition-colors cursor-pointer">
+                        <div className="text-sm font-medium text-[var(--text-primary)]">
                           Milestone completed
                         </div>
-                        <div className="text-xs text-slate-500 mt-0.5">
+                        <div className="text-xs text-[var(--text-secondary)] mt-0.5">
                           128 citations verified.
                         </div>
                       </div>
@@ -289,7 +277,7 @@ export default function DashboardShell() {
               LM
             </button>
             <div className="pl-1">
-              <div className="text-sm font-bold text-slate-800 leading-tight">
+              <div className="text-sm font-bold text-[var(--text-primary)] leading-tight">
                 Leila Morgan
               </div>
               <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 font-medium">
@@ -304,7 +292,6 @@ export default function DashboardShell() {
           <Outlet />
         </div>
 
-        {/* Mobile Sidebar Overlay */}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="fixed bottom-6 left-6 z-40 lg:hidden inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#0f111a] text-white shadow-xl"
@@ -363,13 +350,14 @@ export default function DashboardShell() {
                       <NavLink
                         key={label}
                         to={to}
+                        end={label === "Overview"}
                         onClick={() => setIsMobileMenuOpen(false)}
                         className={({ isActive }) =>
                           cn(
                             "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors",
                             isActive
                               ? "bg-white/10 text-white"
-                              : "text-slate-400 hover:text-white hover:bg-white/5",
+                              : "text-[var(--text-secondary)] hover:text-white hover:bg-white/5",
                           )
                         }
                       >
@@ -378,7 +366,7 @@ export default function DashboardShell() {
                             <span
                               className={cn(
                                 "h-2 w-2 rounded-full",
-                                isActive ? "bg-indigo-400" : "bg-slate-600",
+                                isActive ? "bg-indigo-400" : "bg-[var(--text-muted)]",
                               )}
                             />
                             {label}

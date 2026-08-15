@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
+import { X, Sun, Moon, Monitor } from "lucide-react";
+import { useTheme } from "../../contexts/ThemeContext.jsx";
+import { cn } from "../../utils/cn.js";
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { selectedTheme, setTheme } = useTheme();
   const [email, setEmail] = useState("nazifa@gmail.com");
   const [password, setPassword] = useState("••••••••");
   const [taskNotifications, setTaskNotifications] = useState(true);
@@ -19,7 +22,6 @@ export default function Settings() {
   const [showEmail, setShowEmail] = useState(false);
   const [publishedVisibility, setPublishedVisibility] = useState(true);
   const [allowProjectInvitations, setAllowProjectInvitations] = useState(true);
-  const [theme, setTheme] = useState("Light");
   const [language, setLanguage] = useState("English (US)");
   const [timezone, setTimezone] = useState("GMT+6 · Dhaka");
   const [notice, setNotice] = useState(null);
@@ -36,6 +38,10 @@ export default function Settings() {
     showNotice("Account deactivation request submitted. (Placeholder)");
   };
 
+  const handleThemeSelect = (theme) => {
+    setTheme(theme);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -44,43 +50,44 @@ export default function Settings() {
       className="space-y-6 pb-8 w-full relative"
     >
       <div>
-        <div className="mb-1 text-xs font-medium text-slate-500">Account</div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-[#171827]">
+        <div className="mb-1 text-xs font-medium text-[var(--text-muted)]">
+          Account
+        </div>
+        <h1 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
           Settings
         </h1>
       </div>
 
       <div className="space-y-5">
-        {/* Account & Security */}
-        <section className="rounded-[24px] border border-white/80 bg-white/65 p-7 shadow-[0_16px_36px_rgba(35,42,83,0.07)] backdrop-blur-md">
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
+        <section className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
             Login
           </p>
-          <h2 className="text-xl font-extrabold tracking-tight text-[#1d2030]">
+          <h2 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
             Account & Security
           </h2>
 
           <div className="mt-5 grid grid-cols-2 gap-5">
             <label className="block">
-              <span className="mb-2 block text-xs font-bold text-[#1d2030]">
+              <span className="mb-2 block text-xs font-bold text-[var(--text-primary)]">
                 Email Address
               </span>
               <input
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="h-11 w-full rounded-xl border border-slate-200/80 bg-white/70 px-4 text-sm text-[#1d2030] outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100/60"
+                className="h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] px-4 text-sm text-[var(--text-primary)] outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100/60"
               />
             </label>
             <label className="block">
-              <span className="mb-2 block text-xs font-bold text-[#1d2030]">
+              <span className="mb-2 block text-xs font-bold text-[var(--text-primary)]">
                 Password
               </span>
               <input
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="h-11 w-full rounded-xl border border-slate-200/80 bg-white/70 px-4 text-sm text-[#1d2030] outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100/60"
+                className="h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] px-4 text-sm text-[var(--text-primary)] outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100/60"
               />
             </label>
           </div>
@@ -89,7 +96,7 @@ export default function Settings() {
             <button
               type="button"
               onClick={() => showNotice("Password change flow initiated.")}
-              className="h-10 rounded-xl border border-slate-200/80 bg-white/65 px-5 text-sm font-bold text-slate-500 transition-colors"
+              className="h-10 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
             >
               Change Password
             </button>
@@ -98,39 +105,70 @@ export default function Settings() {
               onClick={() =>
                 showNotice("Two-factor authentication setup started.")
               }
-              className="h-10 rounded-xl border border-slate-200/80 bg-white/65 px-5 text-sm font-bold text-slate-500 transition-colors"
+              className="h-10 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
             >
               Enable Two-Factor Authentication
             </button>
           </div>
 
-          <div className="mt-5 border-t border-slate-200/80 pt-5">
-            <p className="text-sm font-bold text-[#1d2030]">
+          <div className="mt-5 border-t border-[var(--border)] pt-5">
+            <p className="text-sm font-bold text-[var(--text-primary)]">
               Active login sessions
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">
               Chrome on macOS · Dhaka, BD · Current device
             </p>
             <button
               type="button"
               onClick={() => showNotice("All other devices signed out.")}
-              className="mt-3 h-10 rounded-xl border border-slate-200/80 bg-white/65 px-5 text-sm font-bold text-slate-500 transition-colors"
+              className="mt-3 h-10 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
             >
               Sign out everywhere else
             </button>
           </div>
         </section>
 
-        {/* Notification Settings */}
-        <section className="rounded-[24px] border border-white/80 bg-white/65 p-7 shadow-[0_16px_36px_rgba(35,42,83,0.07)] backdrop-blur-md">
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
+        <section className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
+            Appearance
+          </p>
+          <h2 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+            Theme
+          </h2>
+          <div className="mt-5 flex gap-3">
+            <ThemeButton
+              label="Light"
+              icon={<Sun size={18} />}
+              value="light"
+              current={selectedTheme}
+              onClick={handleThemeSelect}
+            />
+            <ThemeButton
+              label="Dark"
+              icon={<Moon size={18} />}
+              value="dark"
+              current={selectedTheme}
+              onClick={handleThemeSelect}
+            />
+            <ThemeButton
+              label="System"
+              icon={<Monitor size={18} />}
+              value="system"
+              current={selectedTheme}
+              onClick={handleThemeSelect}
+            />
+          </div>
+        </section>
+
+        <section className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
             Preferences
           </p>
-          <h2 className="text-xl font-extrabold tracking-tight text-[#1d2030]">
+          <h2 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
             Notification Settings
           </h2>
 
-          <div className="mt-5 divide-y divide-slate-200/80">
+          <div className="mt-5 divide-y divide-[var(--border)]">
             <ToggleRow
               label="Task assignments"
               description="Get notified when you're assigned a new task."
@@ -164,16 +202,15 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* Privacy Settings */}
-        <section className="rounded-[24px] border border-white/80 bg-white/65 p-7 shadow-[0_16px_36px_rgba(35,42,83,0.07)] backdrop-blur-md">
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
+        <section className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
             Visibility
           </p>
-          <h2 className="text-xl font-extrabold tracking-tight text-[#1d2030]">
+          <h2 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
             Privacy
           </h2>
 
-          <div className="mt-5 divide-y divide-slate-200/80">
+          <div className="mt-5 divide-y divide-[var(--border)]">
             <ToggleRow
               label="Public researcher profile"
               description="Allow other researchers to view your profile and publications."
@@ -201,38 +238,23 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* Preferences */}
-        <section className="rounded-[24px] border border-white/80 bg-white/65 p-7 shadow-[0_16px_36px_rgba(35,42,83,0.07)] backdrop-blur-md">
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
+        <section className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
             General
           </p>
-          <h2 className="text-xl font-extrabold tracking-tight text-[#1d2030]">
+          <h2 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
             Preferences
           </h2>
 
           <div className="mt-5 grid grid-cols-2 gap-5">
             <label className="block">
-              <span className="mb-2 block text-xs font-bold text-[#1d2030]">
-                Theme
-              </span>
-              <select
-                value={theme}
-                onChange={(event) => setTheme(event.target.value)}
-                className="h-11 w-full appearance-none rounded-xl border border-slate-200/80 bg-white/70 px-4 pr-10 text-sm text-[#1d2030] outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100/60"
-              >
-                <option>Light</option>
-                <option>Dark</option>
-                <option>System</option>
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-xs font-bold text-[#1d2030]">
+              <span className="mb-2 block text-xs font-bold text-[var(--text-primary)]">
                 Language
               </span>
               <select
                 value={language}
                 onChange={(event) => setLanguage(event.target.value)}
-                className="h-11 w-full appearance-none rounded-xl border border-slate-200/80 bg-white/70 px-4 pr-10 text-sm text-[#1d2030] outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100/60"
+                className="h-11 w-full appearance-none rounded-xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] px-4 pr-10 text-sm text-[var(--text-primary)] outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100/60"
               >
                 <option>English (US)</option>
                 <option>English (UK)</option>
@@ -241,13 +263,13 @@ export default function Settings() {
               </select>
             </label>
             <label className="block">
-              <span className="mb-2 block text-xs font-bold text-[#1d2030]">
+              <span className="mb-2 block text-xs font-bold text-[var(--text-primary)]">
                 Time Zone
               </span>
               <select
                 value={timezone}
                 onChange={(event) => setTimezone(event.target.value)}
-                className="h-11 w-full appearance-none rounded-xl border border-slate-200/80 bg-white/70 px-4 pr-10 text-sm text-[#1d2030] outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100/60"
+                className="h-11 w-full appearance-none rounded-xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] px-4 pr-10 text-sm text-[var(--text-primary)] outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100/60"
               >
                 <option>GMT+6 · Dhaka</option>
                 <option>GMT-5 · New York</option>
@@ -258,12 +280,11 @@ export default function Settings() {
           </div>
         </section>
 
-        {/* Danger Zone */}
-        <section className="rounded-[24px] border border-red-200/60 bg-white/65 p-7 shadow-[0_16px_36px_rgba(220,38,38,0.08)] backdrop-blur-md">
+        <section className="rounded-[24px] border border-red-200/60 bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-red-500">
             Danger Zone
           </p>
-          <h2 className="text-xl font-extrabold tracking-tight text-[#1d2030]">
+          <h2 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
             Deactivate Account
           </h2>
 
@@ -272,7 +293,7 @@ export default function Settings() {
               <h3 className="text-sm font-bold text-red-500">
                 Deactivate my account
               </h3>
-              <p className="mt-1 text-sm leading-relaxed text-slate-500">
+              <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">
                 Your profile and data will be hidden from other researchers.
                 This can be reversed by contacting your department admin.
               </p>
@@ -291,7 +312,7 @@ export default function Settings() {
           <button
             type="button"
             onClick={() => navigate("/dashboard")}
-            className="h-11 rounded-xl border border-slate-200/80 bg-white/65 px-6 text-sm font-bold text-slate-500 shadow-sm transition-colors"
+            className="h-11 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition-colors hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
           >
             Cancel
           </button>
@@ -305,7 +326,6 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Confirmation Dialog for Deactivate */}
       <AnimatePresence>
         {isDeactivateModalOpen && (
           <motion.div
@@ -373,8 +393,12 @@ function ToggleRow({ label, description, checked, onChange }) {
   return (
     <div className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
       <div>
-        <div className="text-sm font-bold text-[#1d2030]">{label}</div>
-        <p className="mt-1 text-xs text-slate-500">{description}</p>
+        <div className="text-sm font-bold text-[var(--text-primary)]">
+          {label}
+        </div>
+        <p className="mt-1 text-xs text-[var(--text-secondary)]">
+          {description}
+        </p>
       </div>
       <button
         type="button"
@@ -394,5 +418,23 @@ function ToggleRow({ label, description, checked, onChange }) {
         />
       </button>
     </div>
+  );
+}
+
+function ThemeButton({ label, icon, value, current, onClick }) {
+  const isActive = current === value;
+  return (
+    <button
+      onClick={() => onClick(value)}
+      className={cn(
+        "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200",
+        isActive
+          ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-400/30"
+          : "border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]",
+      )}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
