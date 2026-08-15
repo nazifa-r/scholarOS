@@ -237,33 +237,33 @@ export default function DashboardShell() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -5 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-40"
+                    className="absolute right-0 top-full mt-2 w-72 bg-[var(--bg-surface)] rounded-2xl shadow-xl border border-[var(--border)] p-4 z-40"
                   >
-                    <div className="text-sm font-bold text-slate-800 mb-3">
+                    <div className="text-sm font-bold text-[var(--text-primary)] mb-3">
                       Notifications
                     </div>
                     <div className="space-y-3">
-                      <div className="p-3 bg-indigo-50/50 rounded-lg border border-indigo-100/50">
-                        <div className="text-sm font-medium text-slate-900">
+                      <div className="p-3 bg-indigo-50/50 rounded-lg border border-[var(--border)]">
+                        <div className="text-sm font-medium text-[var(--text-primary)]">
                           New review added
                         </div>
-                        <div className="text-xs text-slate-500 mt-0.5">
+                        <div className="text-xs text-[var(--text-secondary)] mt-0.5">
                           Prof. Mensah commented on Methods.
                         </div>
                       </div>
-                      <div className="p-3 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
-                        <div className="text-sm font-medium text-slate-900">
+                      <div className="p-3 hover:bg-[var(--bg-surface)] rounded-lg transition-colors cursor-pointer">
+                        <div className="text-sm font-medium text-[var(--text-primary)]">
                           Deadline approaching
                         </div>
-                        <div className="text-xs text-slate-500 mt-0.5">
+                        <div className="text-xs text-[var(--text-secondary)] mt-0.5">
                           BlueGrid Climate Archive due in 5d.
                         </div>
                       </div>
-                      <div className="p-3 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
-                        <div className="text-sm font-medium text-slate-900">
+                      <div className="p-3 hover:bg-[var(--bg-surface)] rounded-lg transition-colors cursor-pointer">
+                        <div className="text-sm font-medium text-[var(--text-primary)]">
                           Milestone completed
                         </div>
-                        <div className="text-xs text-slate-500 mt-0.5">
+                        <div className="text-xs text-[var(--text-secondary)] mt-0.5">
                           128 citations verified.
                         </div>
                       </div>
@@ -366,9 +366,7 @@ export default function DashboardShell() {
                             <span
                               className={cn(
                                 "h-2 w-2 rounded-full",
-                                isActive
-                                  ? "bg-indigo-400"
-                                  : "bg-[var(--text-muted)]",
+                                isActive ? "bg-indigo-400" : "bg-[var(--text-muted)]",
                               )}
                             />
                             {label}
