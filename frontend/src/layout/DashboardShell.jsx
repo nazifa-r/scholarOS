@@ -15,8 +15,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "../utils/cn.js";
+import { useNotifications } from "../contexts/NotificationContext";
 
-// Sidebar menu items
+
 const workspaceItems = [
   { label: "Overview", icon: LayoutDashboard, to: "/dashboard" },
   { label: "Projects", icon: FolderKanban, to: "/dashboard/projects" },
@@ -30,10 +31,13 @@ const accountItems = [
 ];
 
 export default function DashboardShell() {
-  const location = useLocation(); // Used to track the current route for breadcrumb
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef(null);
+
+ 
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -219,7 +223,7 @@ export default function DashboardShell() {
           </div>
 
           <div className="flex items-center gap-4 relative">
-            {/* NOTIFICATION BELL WITH DROPDOWN */}
+            {/* NOTIFICATION BELL WITH DYNAMIC BADGE */}
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => {
@@ -230,7 +234,13 @@ export default function DashboardShell() {
               >
                 <Bell size={18} />
               </button>
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-indigo-500 ring-2 ring-white" />
+
+              {/* ✅ Dynamic badge */}
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-indigo-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                  {unreadCount}
+                </span>
+              )}
 
               <AnimatePresence>
                 {isNotifOpen && (
