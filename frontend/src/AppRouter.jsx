@@ -1,3 +1,4 @@
+import VerifyOtpPage from "./pages/VerifyOtpPage.jsx";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import DashboardShell from "./layout/DashboardShell.jsx";
@@ -26,6 +27,7 @@ export default function AppRouter() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/verify-otp" element={<VerifyOtpPage />} />
 
         {/* Protected Dashboard Routes (Nested) */}
         <Route path="/dashboard" element={<DashboardShell />}>
