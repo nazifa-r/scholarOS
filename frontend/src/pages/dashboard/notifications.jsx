@@ -28,14 +28,30 @@ export default function Notifications() {
         <div>
           <h2 className="text-xl font-bold text-red-500">Provider Missing</h2>
           <p className="mt-2">
+<<<<<<< HEAD
             NotificationContext not found. Please check that your <code>main.jsx</code> has <code>&lt;NotificationProvider&gt;</code> wrapping the app.
+=======
+            NotificationContext not found. Please check that your{" "}
+            <code>main.jsx</code> has <code>&lt;NotificationProvider&gt;</code>{" "}
+            wrapping the app.
+>>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
           </p>
         </div>
       </div>
     );
   }
 
+<<<<<<< HEAD
   const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = context;
+=======
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = context;
+>>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
   const [activeFilter, setActiveFilter] = useState("All");
 
   const filteredNotifications = useMemo(() => {
@@ -64,7 +80,13 @@ export default function Notifications() {
     >
       <div className="flex items-end justify-between gap-8">
         <div>
+<<<<<<< HEAD
           <div className="mb-1 text-xs font-medium text-[var(--text-muted)]">Updates</div>
+=======
+          <div className="mb-1 text-xs font-medium text-[var(--text-muted)]">
+            Updates
+          </div>
+>>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
           <h1 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
             Notifications
           </h1>
@@ -267,4 +289,8 @@ function NotificationIcon({ icon }) {
       {icon}
     </span>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)

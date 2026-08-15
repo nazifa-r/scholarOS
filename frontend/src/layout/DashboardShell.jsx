@@ -366,7 +366,13 @@ export default function DashboardShell() {
                             <span
                               className={cn(
                                 "h-2 w-2 rounded-full",
+<<<<<<< HEAD
                                 isActive ? "bg-indigo-400" : "bg-[var(--text-muted)]",
+=======
+                                isActive
+                                  ? "bg-indigo-400"
+                                  : "bg-[var(--text-muted)]",
+>>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
                               )}
                             />
                             {label}

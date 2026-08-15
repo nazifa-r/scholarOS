@@ -3,6 +3,7 @@
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Instrument Serif", Georgia, serif;
+<<<<<<< HEAD
   --color-navy: #0f111a;
   --color-paper: #f0f3f7;
   --color-card: rgba(255, 255, 255, 0.65);
@@ -10,13 +11,18 @@
   --color-ink: #1a1b23;
   --color-soft: #6b7280;
   --color-teal: #2dd4bf;
+=======
+>>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
 }
 
 html,
 body {
   font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+<<<<<<< HEAD
   background-color: #eceff5;
   color: #1a1b23;
+=======
+>>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -38,12 +44,17 @@ body {
   --border: rgba(226, 232, 240, 0.6);
   --border-subtle: rgba(226, 232, 240, 0.3);
   --accent: #6366f1;
+<<<<<<< HEAD
   --accent-gradient: linear-gradient(to right, #6366f1, #8b5cf6, #06b6d4);
   --shadow-card: 0 4px 30px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 16px 36px rgba(35, 42, 83, 0.07);
   --sidebar-text: #94a3b8;
   --sidebar-hover: rgba(255, 255, 255, 0.05);
   --sidebar-active: rgba(255, 255, 255, 0.08);
+=======
+  --shadow-card: 0 4px 30px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 16px 36px rgba(35, 42, 83, 0.07);
+>>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
   --badge-blue: #eff6ff;
   --badge-blue-text: #2563eb;
   --badge-emerald: #ecfdf5;
@@ -66,12 +77,17 @@ body {
   --border: rgba(255, 255, 255, 0.12);
   --border-subtle: rgba(255, 255, 255, 0.06);
   --accent: #818cf8;
+<<<<<<< HEAD
   --accent-gradient: linear-gradient(to right, #818cf8, #a78bfa, #22d3ee);
   --shadow-card: 0 4px 30px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.6);
   --sidebar-text: #cbd5e1;
   --sidebar-hover: rgba(255, 255, 255, 0.04);
   --sidebar-active: rgba(255, 255, 255, 0.08);
+=======
+  --shadow-card: 0 4px 30px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.6);
+>>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
   --badge-blue: #1e293b;
   --badge-blue-text: #93c5fd;
   --badge-emerald: #064e3b;
@@ -102,6 +118,7 @@ body {
   .glass-panel {
     @apply border border-[var(--border)] bg-[var(--bg-surface)] backdrop-blur-xl shadow-[var(--shadow-card)];
   }
+<<<<<<< HEAD
   .glass-dark-panel {
     @apply border border-white/10 bg-slate-950/40 backdrop-blur-xl shadow-[0_16px_60px_rgba(0,0,0,0.15)];
   }
@@ -146,6 +163,8 @@ body {
     z-index: -1;
     transition: transform 0.3s ease;
   }
+=======
+>>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
   .section-shell {
     @apply mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10;
   }
@@ -157,6 +176,7 @@ body {
       0 32px 120px rgba(37, 99, 235, 0.08),
       0 20px 60px rgba(124, 58, 237, 0.06);
   }
+<<<<<<< HEAD
   .shadow-sidebar {
     box-shadow:
       0 20px 80px rgba(15, 23, 42, 0.12),
@@ -183,4 +203,6 @@ body {
   .sparkline-bar {
     @apply bg-gradient-to-t from-blue-500 via-violet-500 to-cyan-400 rounded-full transition-all duration-500;
   }
+=======
+>>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
 }
