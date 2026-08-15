@@ -366,7 +366,9 @@ export default function DashboardShell() {
                             <span
                               className={cn(
                                 "h-2 w-2 rounded-full",
-                                isActive ? "bg-indigo-400" : "bg-[var(--text-muted)]",
+                                isActive
+                                  ? "bg-indigo-400"
+                                  : "bg-[var(--text-muted)]",
                               )}
                             />
                             {label}

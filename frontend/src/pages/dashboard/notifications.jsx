@@ -28,14 +28,22 @@ export default function Notifications() {
         <div>
           <h2 className="text-xl font-bold text-red-500">Provider Missing</h2>
           <p className="mt-2">
-            NotificationContext not found. Please check that your <code>main.jsx</code> has <code>&lt;NotificationProvider&gt;</code> wrapping the app.
+            NotificationContext not found. Please check that your{" "}
+            <code>main.jsx</code> has <code>&lt;NotificationProvider&gt;</code>{" "}
+            wrapping the app.
           </p>
         </div>
       </div>
     );
   }
 
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = context;
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = context;
   const [activeFilter, setActiveFilter] = useState("All");
 
   const filteredNotifications = useMemo(() => {
@@ -64,7 +72,9 @@ export default function Notifications() {
     >
       <div className="flex items-end justify-between gap-8">
         <div>
-          <div className="mb-1 text-xs font-medium text-[var(--text-muted)]">Updates</div>
+          <div className="mb-1 text-xs font-medium text-[var(--text-muted)]">
+            Updates
+          </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
             Notifications
           </h1>

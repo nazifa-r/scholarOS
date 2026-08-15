@@ -59,7 +59,7 @@ export default function Settings() {
       </div>
 
       <div className="space-y-5">
-        <section className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
+        <section className="glass-panel rounded-[24px] p-7 shadow-[var(--shadow-lg)]">
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
             Login
           </p>
@@ -96,7 +96,7 @@ export default function Settings() {
             <button
               type="button"
               onClick={() => showNotice("Password change flow initiated.")}
-              className="h-10 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
+              className="h-10 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
             >
               Change Password
             </button>
@@ -105,7 +105,7 @@ export default function Settings() {
               onClick={() =>
                 showNotice("Two-factor authentication setup started.")
               }
-              className="h-10 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
+              className="h-10 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
             >
               Enable Two-Factor Authentication
             </button>
@@ -121,14 +121,14 @@ export default function Settings() {
             <button
               type="button"
               onClick={() => showNotice("All other devices signed out.")}
-              className="mt-3 h-10 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
+              className="mt-3 h-10 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
             >
               Sign out everywhere else
             </button>
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
+        <section className="glass-panel rounded-[24px] p-7 shadow-[var(--shadow-lg)]">
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
             Appearance
           </p>
@@ -160,7 +160,7 @@ export default function Settings() {
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
+        <section className="glass-panel rounded-[24px] p-7 shadow-[var(--shadow-lg)]">
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
             Preferences
           </p>
@@ -202,7 +202,7 @@ export default function Settings() {
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
+        <section className="glass-panel rounded-[24px] p-7 shadow-[var(--shadow-lg)]">
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
             Visibility
           </p>
@@ -238,7 +238,7 @@ export default function Settings() {
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
+        <section className="glass-panel rounded-[24px] p-7 shadow-[var(--shadow-lg)]">
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
             General
           </p>
@@ -280,7 +280,7 @@ export default function Settings() {
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-red-200/60 bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
+        <section className="glass-panel rounded-[24px] border border-red-200/60 bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)]">
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-red-500">
             Danger Zone
           </p>
@@ -301,7 +301,7 @@ export default function Settings() {
             <button
               type="button"
               onClick={() => setIsDeactivateModalOpen(true)}
-              className="h-10 rounded-xl border border-red-200/60 bg-red-50 px-5 text-sm font-bold text-red-500 transition-colors"
+              className="h-10 rounded-xl border border-red-200/60 bg-red-50 px-5 text-sm font-bold text-red-500"
             >
               Deactivate
             </button>
@@ -312,14 +312,14 @@ export default function Settings() {
           <button
             type="button"
             onClick={() => navigate("/dashboard")}
-            className="h-11 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition-colors hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
+            className="h-11 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] shadow-sm hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={saveChanges}
-            className="h-11 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-400 px-6 text-sm font-bold text-white shadow-lg shadow-indigo-300/35 transition-colors"
+            className="h-11 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-400 px-6 text-sm font-bold text-white shadow-lg shadow-indigo-300/35"
           >
             Save Changes
           </button>
@@ -345,7 +345,7 @@ export default function Settings() {
             >
               <button
                 onClick={() => setIsDeactivateModalOpen(false)}
-                className="absolute right-4 top-4 text-slate-400 hover:text-slate-800 transition-colors"
+                className="absolute right-4 top-4 text-slate-400 hover:text-slate-800"
               >
                 <X size={20} />
               </button>
@@ -360,14 +360,14 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setIsDeactivateModalOpen(false)}
-                  className="h-10 rounded-xl border border-slate-200/80 bg-white/65 px-6 text-sm font-bold text-slate-500 transition-colors"
+                  className="h-10 rounded-xl border border-slate-200/80 bg-white/65 px-6 text-sm font-bold text-slate-500"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleDeactivate}
-                  className="h-10 rounded-xl bg-red-500 px-6 text-sm font-bold text-white transition-colors shadow-lg shadow-red-500/30"
+                  className="h-10 rounded-xl bg-red-500 px-6 text-sm font-bold text-white shadow-lg shadow-red-500/30"
                 >
                   Deactivate
                 </button>
