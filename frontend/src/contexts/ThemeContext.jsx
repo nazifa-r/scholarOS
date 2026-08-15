@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
-=======
 import {
   createContext,
   useContext,
@@ -8,7 +5,6 @@ import {
   useState,
   useCallback,
 } from "react";
->>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
 
 const ThemeContext = createContext();
 
@@ -28,27 +24,6 @@ export const ThemeProvider = ({ children }) => {
   }, []);
 
   const getSystemTheme = useCallback(() => {
-<<<<<<< HEAD
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }, []);
-
-  const resolveTheme = useCallback((theme) => {
-    if (theme === "system") {
-      return getSystemTheme();
-    }
-    return theme;
-  }, [getSystemTheme]);
-
-  const handleThemeChange = useCallback((newTheme) => {
-    setSelectedTheme(newTheme);
-    const resolved = resolveTheme(newTheme);
-    setResolvedTheme(resolved);
-    applyTheme(resolved);
-    try {
-      localStorage.setItem("scholaros_theme", newTheme);
-    } catch {}
-  }, [resolveTheme, applyTheme]);
-=======
     return window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light";
@@ -76,7 +51,6 @@ export const ThemeProvider = ({ children }) => {
     },
     [resolveTheme, applyTheme],
   );
->>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
 
   useEffect(() => {
     let saved;
@@ -109,13 +83,7 @@ export const ThemeProvider = ({ children }) => {
   };
 
   return (
-<<<<<<< HEAD
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-=======
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
->>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)
   );
 };
 
@@ -125,8 +93,4 @@ export const useTheme = () => {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> 9873b64 (fix: resolve sidebar active state issue and improved dark mode theme)

@@ -1,4 +1,3 @@
-import { apiRequest } from "../utils/api.js";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
@@ -13,6 +12,12 @@ const initialState = {
   remember: true,
 };
 
+const ALLOWED_USERS = {
+  "tanjim@gmail.com": "12345678",
+  "nazifa@gmail.com": "12345678",
+  "asif@gmail.com": "12345678",
+};
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState(initialState);
@@ -21,47 +26,21 @@ export default function LoginPage() {
 
   const inputClass = useMemo(
     () =>
-      "w-full rounded-2xl border border-slate-200/80 bg-white/85 px-4 py-3.5 text-slate-900 shadow-sm outline-none backdrop-blur-xl placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100",
+      "w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] px-4 py-3.5 text-[var(--text-primary)] shadow-sm outline-none backdrop-blur-xl placeholder:text-[var(--text-muted)] focus:border-blue-300 focus:ring-4 focus:ring-blue-100",
     [],
   );
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = (event) => {
     event.preventDefault();
-
     setErrors({});
 
-    try {
-      const data = await apiRequest("/login", {
-        method: "POST",
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-        }),
-      });
+    const { email, password } = form;
 
-      localStorage.setItem("scholaros_token", data.token);
-      localStorage.setItem("scholaros_user", JSON.stringify(data.user));
-
+    if (ALLOWED_USERS[email] && ALLOWED_USERS[email] === password) {
+      localStorage.setItem("scholaros_user", "true");
       navigate("/dashboard");
-    } catch (error) {
-      if (error.status === 403 && error.data?.requires_verification) {
-        sessionStorage.setItem(
-          "scholaros_verification_email",
-          error.data.email,
-        );
-
-        navigate("/verify-otp");
-        return;
-      }
-
-      const backendErrors = error.data?.errors;
-
-      setErrors({
-        general:
-          backendErrors?.email?.[0] ||
-          error.data?.message ||
-          "Invalid email or password. Please try again.",
-      });
+    } else {
+      setErrors({ general: "Invalid email or password. Please try again." });
     }
   };
 
@@ -75,14 +54,13 @@ export default function LoginPage() {
       footerAction={
         <Link
           to="/register"
-          className="font-semibold text-blue-700 hover:text-blue-800"
+          className="font-semibold text-[var(--badge-blue-text)] hover:text-blue-800"
         >
           Create one
         </Link>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* General Error Message */}
         {errors.general && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
@@ -94,11 +72,11 @@ export default function LoginPage() {
         )}
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
             Email address
           </label>
           <div className="relative">
-            <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
             <input
               type="email"
               value={form.email}
@@ -120,11 +98,11 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
             Password
           </label>
           <div className="relative">
-            <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
             <input
               type={showPassword ? "text" : "password"}
               value={form.password}
@@ -145,7 +123,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               aria-label="Toggle password visibility"
             >
               {showPassword ? (
@@ -157,7 +135,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 text-sm text-[var(--text-secondary)] sm:flex-row sm:items-center sm:justify-between">
           <label className="inline-flex items-center gap-3">
             <input
               type="checkbox"
@@ -168,11 +146,14 @@ export default function LoginPage() {
                   remember: event.target.checked,
                 }))
               }
-              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-200"
+              className="h-4 w-4 rounded border-[var(--border)] text-blue-600 focus:ring-blue-200"
             />
             Remember me
           </label>
-          <a href="/" className="font-medium text-blue-700 hover:text-blue-800">
+          <a
+            href="/"
+            className="font-medium text-[var(--badge-blue-text)] hover:text-blue-800"
+          >
             Forgot password?
           </a>
         </div>
