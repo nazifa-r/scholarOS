@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ResearchPaper;
 use Illuminate\Http\Request;
 
 class ResearchPaperController extends Controller
 {
     /**
-     * Get all research papers (placeholder data)
+     * Get all research papers (with pagination and optional filters)
      */
     public function index(Request $request)
     {
@@ -33,6 +34,14 @@ class ResearchPaperController extends Controller
             $papers = array_values($papers);
         }
 
+        if ($request->has('publication_status')) {
+            $status = $request->publication_status;
+            $papers = array_filter($papers, function ($paper) use ($status) {
+                return $paper['publication_status'] === $status;
+            });
+            $papers = array_values($papers);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Research papers retrieved successfully',
@@ -47,7 +56,7 @@ class ResearchPaperController extends Controller
     }
 
     /**
-     * Get a single research paper (placeholder)
+     * Get a single research paper
      */
     public function show($id)
     {
@@ -55,7 +64,7 @@ class ResearchPaperController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Research paper retrieved successfully (placeholder)',
+            'message' => 'Research paper retrieved successfully',
             'data' => $paper
         ]);
     }
@@ -72,8 +81,12 @@ class ResearchPaperController extends Controller
             'research_area' => 'nullable|string|max:100',
             'category' => 'nullable|string|max:100',
             'authors' => 'nullable|string|max:255',
-            'google_scholar_url' => 'nullable|url|max:255',
+            'google_scholar_url' => 'nullable|url|max:255|regex:/^https?:\/\/scholar\.google\.com\/.*/',
+            'doi' => 'nullable|string|max:100|regex:/^10\.\d{4,9}\/[-._;()\/:A-Z0-9]+$/i',
             'publication_status' => 'nullable|string|in:draft,submitted,under_review,published',
+        ], [
+            'google_scholar_url.regex' => 'The Google Scholar URL must be a valid Google Scholar link (https://scholar.google.com/...)',
+            'doi.regex' => 'The DOI format is invalid. Expected format: 10.xxxx/xxxxx',
         ]);
 
         return response()->json([
@@ -88,6 +101,7 @@ class ResearchPaperController extends Controller
                 'category' => $validated['category'] ?? null,
                 'authors' => $validated['authors'] ?? null,
                 'google_scholar_url' => $validated['google_scholar_url'] ?? null,
+                'doi' => $validated['doi'] ?? null,
                 'publication_status' => $validated['publication_status'] ?? 'draft',
                 'status' => 'pending',
                 'is_verified' => false,
@@ -100,7 +114,7 @@ class ResearchPaperController extends Controller
     }
 
     /**
-     * Update a research paper (placeholder)
+     * Update an existing research paper (placeholder)
      */
     public function update(Request $request, $id)
     {
@@ -111,8 +125,12 @@ class ResearchPaperController extends Controller
             'research_area' => 'nullable|string|max:100',
             'category' => 'nullable|string|max:100',
             'authors' => 'nullable|string|max:255',
-            'google_scholar_url' => 'nullable|url|max:255',
+            'google_scholar_url' => 'nullable|url|max:255|regex:/^https?:\/\/scholar\.google\.com\/.*/',
+            'doi' => 'nullable|string|max:100|regex:/^10\.\d{4,9}\/[-._;()\/:A-Z0-9]+$/i',
             'publication_status' => 'nullable|string|in:draft,submitted,under_review,published',
+        ], [
+            'google_scholar_url.regex' => 'The Google Scholar URL must be a valid Google Scholar link (https://scholar.google.com/...)',
+            'doi.regex' => 'The DOI format is invalid. Expected format: 10.xxxx/xxxxx',
         ]);
 
         return response()->json([
@@ -127,6 +145,7 @@ class ResearchPaperController extends Controller
                 'category' => $validated['category'] ?? null,
                 'authors' => $validated['authors'] ?? null,
                 'google_scholar_url' => $validated['google_scholar_url'] ?? null,
+                'doi' => $validated['doi'] ?? null,
                 'publication_status' => $validated['publication_status'] ?? 'draft',
                 'updated_at' => now()->toISOString(),
             ]
@@ -170,6 +189,7 @@ class ResearchPaperController extends Controller
             'category' => 'Journal Article',
             'authors' => 'Dr. John Smith, Jane Doe',
             'google_scholar_url' => 'https://scholar.google.com/citations?user=sample123',
+            'doi' => '10.1234/sample.2024.01.001',
             'publication_status' => 'published',
             'status' => 'approved',
             'is_verified' => true,
@@ -181,7 +201,7 @@ class ResearchPaperController extends Controller
     }
 
     /**
-     * Get placeholder papers list
+     * Get placeholder papers list with Google Scholar URLs and DOIs
      */
     private function getPlaceholderPapers()
     {
@@ -195,6 +215,7 @@ class ResearchPaperController extends Controller
                 'category' => 'Journal Article',
                 'authors' => 'Dr. Sarah Johnson, Prof. Michael Chen',
                 'google_scholar_url' => 'https://scholar.google.com/citations?user=aihealth123',
+                'doi' => '10.1016/j.health.2024.01.001',
                 'publication_status' => 'published',
                 'status' => 'approved',
                 'is_verified' => true,
@@ -212,6 +233,7 @@ class ResearchPaperController extends Controller
                 'category' => 'Conference Paper',
                 'authors' => 'Dr. Emily Brown, Dr. David Wilson',
                 'google_scholar_url' => 'https://scholar.google.com/citations?user=nlpml456',
+                'doi' => '10.1016/j.nlp.2024.02.003',
                 'publication_status' => 'published',
                 'status' => 'approved',
                 'is_verified' => true,
@@ -229,6 +251,7 @@ class ResearchPaperController extends Controller
                 'category' => 'Journal Article',
                 'authors' => 'Prof. Robert Taylor, Dr. Lisa Park',
                 'google_scholar_url' => 'https://scholar.google.com/citations?user=datamine789',
+                'doi' => '10.1016/j.dm.2024.03.002',
                 'publication_status' => 'under_review',
                 'status' => 'pending',
                 'is_verified' => false,
@@ -246,6 +269,7 @@ class ResearchPaperController extends Controller
                 'category' => 'Conference Paper',
                 'authors' => 'Dr. James Martinez, Dr. Anna Kim',
                 'google_scholar_url' => 'https://scholar.google.com/citations?user=iotsec321',
+                'doi' => '10.1016/j.cyber.2024.04.001',
                 'publication_status' => 'submitted',
                 'status' => 'pending',
                 'is_verified' => false,
@@ -263,6 +287,7 @@ class ResearchPaperController extends Controller
                 'category' => 'Journal Article',
                 'authors' => 'Prof. William Chen, Dr. Maria Garcia',
                 'google_scholar_url' => 'https://scholar.google.com/citations?user=blockscm654',
+                'doi' => '10.1016/j.block.2024.05.001',
                 'publication_status' => 'published',
                 'status' => 'approved',
                 'is_verified' => true,

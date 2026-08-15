@@ -18,6 +18,7 @@ class ResearchPaper extends Model
         'category',
         'authors',
         'google_scholar_url',
+        'doi',
         'publication_status',
         'category_id',
         'research_area_id',
@@ -50,8 +51,7 @@ class ResearchPaper extends Model
         'downloads' => 0,
     ];
 
-    // Comment out ALL relationships for now
-    /*
+    // Relationships
     public function category()
     {
         return $this->belongsTo(Category::class);
@@ -96,9 +96,8 @@ class ResearchPaper extends Model
     {
         return $this->hasMany(PaperVersion::class);
     }
-    */
 
-    // Keep these - they don't need other models
+    // Scopes
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
@@ -114,9 +113,10 @@ class ResearchPaper extends Model
         return $query->where('is_verified', true);
     }
 
+    // Accessors
     public function getFormattedAuthorsAttribute()
     {
-        return $this->authors; // Simplified for now
+        return $this->authors->pluck('full_name')->implode(', ');
     }
 
     public function getStatusBadgeAttribute()
@@ -128,5 +128,23 @@ class ResearchPaper extends Model
             'withdrawn' => 'secondary',
         ];
         return $badges[$this->status] ?? 'secondary';
+    }
+
+    // Helper method to get Google Scholar URL with proper format
+    public function getGoogleScholarLinkAttribute()
+    {
+        if ($this->google_scholar_url) {
+            return $this->google_scholar_url;
+        }
+        return null;
+    }
+
+    // Helper method to get DOI link
+    public function getDoiLinkAttribute()
+    {
+        if ($this->doi) {
+            return 'https://doi.org/' . $this->doi;
+        }
+        return null;
     }
 }
