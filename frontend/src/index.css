@@ -3,11 +3,20 @@
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Instrument Serif", Georgia, serif;
+  --color-navy: #0f111a;
+  --color-paper: #f0f3f7;
+  --color-card: rgba(255, 255, 255, 0.65);
+  --color-card-border: rgba(255, 255, 255, 0.35);
+  --color-ink: #1a1b23;
+  --color-soft: #6b7280;
+  --color-teal: #2dd4bf;
 }
 
 html,
 body {
   font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  background-color: #eceff5;
+  color: #1a1b23;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -29,8 +38,12 @@ body {
   --border: rgba(226, 232, 240, 0.6);
   --border-subtle: rgba(226, 232, 240, 0.3);
   --accent: #6366f1;
+  --accent-gradient: linear-gradient(to right, #6366f1, #8b5cf6, #06b6d4);
   --shadow-card: 0 4px 30px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 16px 36px rgba(35, 42, 83, 0.07);
+  --sidebar-text: #94a3b8;
+  --sidebar-hover: rgba(255, 255, 255, 0.05);
+  --sidebar-active: rgba(255, 255, 255, 0.08);
   --badge-blue: #eff6ff;
   --badge-blue-text: #2563eb;
   --badge-emerald: #ecfdf5;
@@ -53,8 +66,12 @@ body {
   --border: rgba(255, 255, 255, 0.12);
   --border-subtle: rgba(255, 255, 255, 0.06);
   --accent: #818cf8;
+  --accent-gradient: linear-gradient(to right, #818cf8, #a78bfa, #22d3ee);
   --shadow-card: 0 4px 30px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.6);
+  --sidebar-text: #cbd5e1;
+  --sidebar-hover: rgba(255, 255, 255, 0.04);
+  --sidebar-active: rgba(255, 255, 255, 0.08);
   --badge-blue: #1e293b;
   --badge-blue-text: #93c5fd;
   --badge-emerald: #064e3b;
@@ -85,6 +102,50 @@ body {
   .glass-panel {
     @apply border border-[var(--border)] bg-[var(--bg-surface)] backdrop-blur-xl shadow-[var(--shadow-card)];
   }
+  .glass-dark-panel {
+    @apply border border-white/10 bg-slate-950/40 backdrop-blur-xl shadow-[0_16px_60px_rgba(0,0,0,0.15)];
+  }
+  .hero-grid {
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+  .noise-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.15;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    mask-image: linear-gradient(180deg, black 35%, transparent 100%);
+  }
+  .gradient-stroke-premium {
+    position: relative;
+    isolation: isolate;
+  }
+  .gradient-stroke-premium::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from 0deg,
+      transparent,
+      #2563eb,
+      #7c3aed,
+      #06b6d4,
+      transparent
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    z-index: -1;
+    transition: transform 0.3s ease;
+  }
   .section-shell {
     @apply mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10;
   }
@@ -95,5 +156,31 @@ body {
     box-shadow:
       0 32px 120px rgba(37, 99, 235, 0.08),
       0 20px 60px rgba(124, 58, 237, 0.06);
+  }
+  .shadow-sidebar {
+    box-shadow:
+      0 20px 80px rgba(15, 23, 42, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+  .bg-radial-dashboard {
+    background:
+      radial-gradient(
+        circle at 15% 20%,
+        rgba(37, 99, 235, 0.15),
+        transparent 30%
+      ),
+      radial-gradient(
+        circle at 85% 80%,
+        rgba(124, 58, 237, 0.15),
+        transparent 25%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.9),
+        rgba(248, 250, 252, 0.98)
+      );
+  }
+  .sparkline-bar {
+    @apply bg-gradient-to-t from-blue-500 via-violet-500 to-cyan-400 rounded-full transition-all duration-500;
   }
 }

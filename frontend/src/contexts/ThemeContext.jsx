@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 const ThemeContext = createContext();
 
@@ -24,33 +18,25 @@ export const ThemeProvider = ({ children }) => {
   }, []);
 
   const getSystemTheme = useCallback(() => {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }, []);
 
-  const resolveTheme = useCallback(
-    (theme) => {
-      if (theme === "system") {
-        return getSystemTheme();
-      }
-      return theme;
-    },
-    [getSystemTheme],
-  );
+  const resolveTheme = useCallback((theme) => {
+    if (theme === "system") {
+      return getSystemTheme();
+    }
+    return theme;
+  }, [getSystemTheme]);
 
-  const handleThemeChange = useCallback(
-    (newTheme) => {
-      setSelectedTheme(newTheme);
-      const resolved = resolveTheme(newTheme);
-      setResolvedTheme(resolved);
-      applyTheme(resolved);
-      try {
-        localStorage.setItem("scholaros_theme", newTheme);
-      } catch {}
-    },
-    [resolveTheme, applyTheme],
-  );
+  const handleThemeChange = useCallback((newTheme) => {
+    setSelectedTheme(newTheme);
+    const resolved = resolveTheme(newTheme);
+    setResolvedTheme(resolved);
+    applyTheme(resolved);
+    try {
+      localStorage.setItem("scholaros_theme", newTheme);
+    } catch {}
+  }, [resolveTheme, applyTheme]);
 
   useEffect(() => {
     let saved;
@@ -83,7 +69,9 @@ export const ThemeProvider = ({ children }) => {
   };
 
   return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>
+      {children}
+    </ThemeContext.Provider>
   );
 };
 
