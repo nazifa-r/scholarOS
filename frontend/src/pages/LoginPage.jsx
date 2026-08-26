@@ -183,20 +183,6 @@ export default function LoginPage() {
         >
           Login
         </Button>
-
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="rounded-[28px] border border-blue-100 bg-blue-50/70 p-5 text-sm leading-7 text-slate-600"
-        >
-          <p className="font-semibold text-slate-800 mb-1">Demo Credentials:</p>
-          <div className="space-y-1 text-slate-500 text-xs">
-            <p>tanjim@gmail.com / 12345678</p>
-            <p>nazifa@gmail.com / 12345678</p>
-            <p>asif@gmail.com / 12345678</p>
-          </div>
-        </motion.div>
       </form>
     </AuthLayout>
   );

@@ -1,3 +1,5 @@
+import InterestSetup from "./pages/InterestSetup.jsx";
+import RoleSetup from "./pages/RoleSetup.jsx";
 import VerifyOtpPage from "./pages/VerifyOtpPage.jsx";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
@@ -11,6 +13,7 @@ import Researchers from "./pages/dashboard/researchers.jsx";
 import Notifications from "./pages/dashboard/notifications.jsx";
 import Settings from "./pages/dashboard/settings.jsx";
 import UploadPaper from "./pages/UploadPaper.jsx";
+import ProfilePage from "./pages/dashboard/profile.jsx";
 
 // Public Pages
 import LandingPage from "./pages/LandingPage.jsx";
@@ -28,6 +31,8 @@ export default function AppRouter() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify-otp" element={<VerifyOtpPage />} />
+        <Route path="/interest-setup" element={<InterestSetup />} />
+        <Route path="/role-setup" element={<RoleSetup />} />
 
         {/* Protected Dashboard Routes (Nested) */}
         <Route path="/dashboard" element={<DashboardShell />}>
@@ -37,7 +42,8 @@ export default function AppRouter() {
           <Route path="researchers" element={<Researchers />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="settings" element={<Settings />} />
-          <Route path="upload" element={<UploadPaper />} /> {/* ✅ রুট যুক্ত করা হয়েছে */}
+          <Route path="upload" element={<UploadPaper />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
 
         {/* 404 Fallback */}
