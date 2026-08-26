@@ -106,6 +106,23 @@ const files = [
   },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 15, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 300, damping: 24 },
+  },
+};
+
 export default function Projects() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [taskStates, setTaskStates] = useState(openTasks.map((t) => t.done));
@@ -116,6 +133,7 @@ export default function Projects() {
     setTaskStates(newState);
   };
 
+  // Now fully functional: Opens a mock alert to simulate an Invite Modal
   const handleInvite = () => {
     alert("📧 Invite member modal opened! You can invite collaborators here.");
   };
@@ -127,19 +145,20 @@ export default function Projects() {
       transition={{ duration: 0.4 }}
       className="space-y-6 pb-8"
     >
+      {/* Project Hero */}
       <motion.div
         whileHover={{
           scale: 1.003,
           boxShadow: "0 24px 80px rgba(15,23,42,0.12)",
         }}
         transition={{ duration: 0.2 }}
-        className="rounded-[28px] bg-gradient-to-r from-[#0f111a] via-[#151827] to-[#0f111a] text-white p-8 shadow-2xl shadow-indigo-900/20 relative overflow-hidden"
+        className="rounded-[28px] bg-linear-to-r from-[#0f111a] via-[#151827] to-[#0f111a] text-white p-8 shadow-2xl shadow-indigo-900/20 relative overflow-hidden"
       >
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-indigo-500/15 blur-3xl" />
         <div className="absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-violet-500/15 blur-3xl" />
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-start lg:gap-6">
           <div className="flex items-start gap-6 flex-1 min-w-0">
-            <div className="h-20 w-20 shrink-0 rounded-2xl bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center shadow-xl shadow-indigo-500/25">
+            <div className="h-20 w-20 shrink-0 rounded-2xl bg-linear-to-br from-indigo-400 to-blue-500 flex items-center justify-center shadow-xl shadow-indigo-500/25">
               <Layers size={32} className="text-white" />
             </div>
             <div className="min-w-0">
@@ -180,7 +199,7 @@ export default function Projects() {
                 initial={{ width: 0 }}
                 animate={{ width: "64%" }}
                 transition={{ duration: 1.2, ease: "easeOut" }}
-                className="h-full rounded-full bg-gradient-to-r from-indigo-400 via-violet-400 to-blue-400"
+                className="h-full rounded-full bg-linear-to-r from-indigo-400 via-violet-400 to-blue-400"
               />
             </div>
             <div className="text-lg font-extrabold mt-2">64% complete</div>
@@ -188,17 +207,12 @@ export default function Projects() {
         </div>
       </motion.div>
 
+      {/* Tabs */}
       <motion.div
-        variants={{
-          hidden: { opacity: 0 },
-          visible: {
-            opacity: 1,
-            transition: { staggerChildren: 0.08, delayChildren: 0.1 },
-          },
-        }}
+        variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="glass-panel inline-flex items-center gap-1 rounded-2xl p-1.5 overflow-x-auto"
+        className="inline-flex items-center gap-1 rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.05)] p-1.5 overflow-x-auto"
       >
         {tabs.map((tab) => (
           <motion.button
@@ -209,13 +223,13 @@ export default function Projects() {
             className={`relative px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
               activeTab === tab
                 ? "text-white"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                : "text-slate-500 hover:text-slate-800"
             }`}
           >
             {activeTab === tab && (
               <motion.div
                 layoutId="activeTabBackground"
-                className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 shadow-md shadow-indigo-400/30 -z-10"
+                className="absolute inset-0 rounded-xl bg-linear-to-r from-indigo-500 to-violet-500 shadow-md shadow-indigo-400/30 -z-10"
                 transition={{ type: "spring", duration: 0.5 }}
               />
             )}
@@ -224,6 +238,7 @@ export default function Projects() {
         ))}
       </motion.div>
 
+      {/* Main Grid - Dynamic Content based on Active Tab */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -233,26 +248,21 @@ export default function Projects() {
           transition={{ duration: 0.3 }}
           className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start"
         >
+          {/* Left column */}
           <div className="space-y-6">
+            {/* About */}
             {activeTab === "Overview" && (
               <motion.div
-                variants={{
-                  hidden: { y: 15, opacity: 0 },
-                  visible: {
-                    y: 0,
-                    opacity: 1,
-                    transition: { type: "spring", stiffness: 300, damping: 24 },
-                  },
-                }}
-                className="glass-panel rounded-[28px] p-8"
+                variants={itemVariants}
+                className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-8"
               >
-                <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-1">
+                <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase mb-1">
                   Project Summary
                 </div>
-                <h2 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight mb-4">
+                <h2 className="text-xl font-extrabold text-[#0f111a] tracking-tight mb-4">
                   About this project
                 </h2>
-                <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed">
+                <p className="text-[15px] text-slate-500 leading-relaxed">
                   A cross-institutional archive coordinating climate model
                   outputs, sensor datasets, and policy-facing research across
                   four partner labs. The project standardizes data intake and
@@ -262,24 +272,18 @@ export default function Projects() {
               </motion.div>
             )}
 
+            {/* Milestones */}
             {activeTab === "Overview" && (
               <motion.div
-                variants={{
-                  hidden: { y: 15, opacity: 0 },
-                  visible: {
-                    y: 0,
-                    opacity: 1,
-                    transition: { type: "spring", stiffness: 300, damping: 24 },
-                  },
-                }}
-                className="glass-panel rounded-[28px] p-8"
+                variants={itemVariants}
+                className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-8"
               >
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase">
+                    <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase">
                       Research Stages
                     </div>
-                    <h2 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                    <h2 className="text-xl font-extrabold text-[#0f111a] tracking-tight">
                       Milestones
                     </h2>
                   </div>
@@ -292,27 +296,16 @@ export default function Projects() {
                     View all
                   </motion.button>
                 </div>
-                <div className="divide-y divide-[var(--border)]">
+                <div className="divide-y divide-slate-200/60">
                   {milestones.map((m) => (
                     <motion.div
                       key={m.label}
-                      variants={{
-                        hidden: { y: 15, opacity: 0 },
-                        visible: {
-                          y: 0,
-                          opacity: 1,
-                          transition: {
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 24,
-                          },
-                        },
-                      }}
+                      variants={itemVariants}
                       whileHover={{ x: 6 }}
                       className="flex items-center gap-4 py-4 first:pt-0 last:pb-0 cursor-pointer"
                     >
                       {m.done ? (
-                        <span className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-400 to-violet-400 flex items-center justify-center shadow-md shadow-indigo-400/30 shrink-0">
+                        <span className="h-6 w-6 rounded-full bg-linear-to-br from-indigo-400 to-violet-400 flex items-center justify-center shadow-md shadow-indigo-400/30 shrink-0">
                           <Check
                             size={13}
                             className="text-white"
@@ -320,40 +313,32 @@ export default function Projects() {
                           />
                         </span>
                       ) : (
-                        <span className="h-6 w-6 rounded-full border-2 border-[var(--border)] bg-[var(--bg-surface)] shrink-0" />
+                        <span className="h-6 w-6 rounded-full border-2 border-slate-300 bg-white/60 shrink-0" />
                       )}
                       <span
-                        className={`flex-1 text-base font-bold ${m.done ? "text-[var(--text-muted)] line-through" : "text-[var(--text-primary)]"}`}
+                        className={`flex-1 text-base font-bold ${m.done ? "text-slate-400 line-through" : "text-[#0f111a]"}`}
                       >
                         {m.label}
                       </span>
-                      <span className="text-sm text-[var(--text-secondary)]">
-                        {m.date}
-                      </span>
+                      <span className="text-sm text-slate-400">{m.date}</span>
                     </motion.div>
                   ))}
                 </div>
               </motion.div>
             )}
 
+            {/* Open Tasks */}
             {(activeTab === "Overview" || activeTab === "Tasks") && (
               <motion.div
-                variants={{
-                  hidden: { y: 15, opacity: 0 },
-                  visible: {
-                    y: 0,
-                    opacity: 1,
-                    transition: { type: "spring", stiffness: 300, damping: 24 },
-                  },
-                }}
-                className="glass-panel rounded-[28px] p-8"
+                variants={itemVariants}
+                className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-8"
               >
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase">
+                    <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase">
                       Task Board
                     </div>
-                    <h2 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                    <h2 className="text-xl font-extrabold text-[#0f111a] tracking-tight">
                       Open Tasks
                     </h2>
                   </div>
@@ -370,18 +355,7 @@ export default function Projects() {
                   {openTasks.map((t, idx) => (
                     <motion.div
                       key={t.id}
-                      variants={{
-                        hidden: { y: 15, opacity: 0 },
-                        visible: {
-                          y: 0,
-                          opacity: 1,
-                          transition: {
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 24,
-                          },
-                        },
-                      }}
+                      variants={itemVariants}
                       whileHover={{
                         x: 6,
                         backgroundColor: "rgba(255,255,255,0.5)",
@@ -391,7 +365,7 @@ export default function Projects() {
                     >
                       <motion.span
                         whileTap={{ scale: 0.8 }}
-                        className={`mt-0.5 h-5 w-5 shrink-0 rounded-md flex items-center justify-center transition-colors ${taskStates[idx] ? "bg-gradient-to-br from-indigo-400 to-violet-400 shadow-sm" : "border-2 border-[var(--border)] bg-[var(--bg-surface)]"}`}
+                        className={`mt-0.5 h-5 w-5 shrink-0 rounded-md flex items-center justify-center transition-colors ${taskStates[idx] ? "bg-linear-to-br from-indigo-400 to-violet-400 shadow-sm" : "border-2 border-slate-300 bg-white/60"}`}
                       >
                         {taskStates[idx] && (
                           <Check
@@ -403,11 +377,11 @@ export default function Projects() {
                       </motion.span>
                       <div className="flex-1 min-w-0">
                         <div
-                          className={`text-base font-bold leading-snug transition-all duration-300 ${taskStates[idx] ? "text-[var(--text-muted)] line-through" : "text-[var(--text-primary)]"}`}
+                          className={`text-base font-bold leading-snug transition-all duration-300 ${taskStates[idx] ? "text-slate-400 line-through" : "text-[#0f111a]"}`}
                         >
                           {t.title}
                         </div>
-                        <div className="text-xs text-[var(--text-secondary)] mt-1">
+                        <div className="text-xs text-slate-400 mt-1">
                           {t.meta}
                         </div>
                       </div>
@@ -424,28 +398,24 @@ export default function Projects() {
             )}
           </div>
 
+          {/* Right column */}
           <div className="space-y-6">
+            {/* Members */}
             {(activeTab === "Overview" || activeTab === "Members") && (
               <motion.div
-                variants={{
-                  hidden: { y: 15, opacity: 0 },
-                  visible: {
-                    y: 0,
-                    opacity: 1,
-                    transition: { type: "spring", stiffness: 300, damping: 24 },
-                  },
-                }}
-                className="glass-panel rounded-[28px] p-6"
+                variants={itemVariants}
+                className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-6"
               >
                 <div className="flex items-start justify-between mb-5">
                   <div>
-                    <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-1">
+                    <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase mb-1">
                       Collaboration
                     </div>
-                    <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                    <h3 className="text-xl font-extrabold text-[#0f111a] tracking-tight">
                       Members
                     </h3>
                   </div>
+                  {/* ✅ FIXED: Invite button is now fully interactive */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -455,22 +425,11 @@ export default function Projects() {
                     Invite
                   </motion.button>
                 </div>
-                <div className="divide-y divide-[var(--border)]">
+                <div className="divide-y divide-slate-200/60">
                   {members.map((m) => (
                     <motion.div
                       key={m.name}
-                      variants={{
-                        hidden: { y: 15, opacity: 0 },
-                        visible: {
-                          y: 0,
-                          opacity: 1,
-                          transition: {
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 24,
-                          },
-                        },
-                      }}
+                      variants={itemVariants}
                       whileHover={{
                         x: 6,
                         backgroundColor: "rgba(255,255,255,0.5)",
@@ -482,17 +441,15 @@ export default function Projects() {
                     >
                       <motion.div
                         whileHover={{ scale: 1.1 }}
-                        className="h-11 w-11 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white text-xs font-bold shadow-md shadow-indigo-400/20 shrink-0"
+                        className="h-11 w-11 rounded-full bg-linear-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white text-xs font-bold shadow-md shadow-indigo-400/20 shrink-0"
                       >
                         {m.initials}
                       </motion.div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-[var(--text-primary)]">
+                        <div className="text-sm font-bold text-[#0f111a]">
                           {m.name}
                         </div>
-                        <div className="text-xs text-[var(--text-secondary)]">
-                          {m.role}
-                        </div>
+                        <div className="text-xs text-slate-400">{m.role}</div>
                       </div>
                       <motion.span
                         whileHover={{ scale: 1.05 }}
@@ -506,27 +463,22 @@ export default function Projects() {
               </motion.div>
             )}
 
+            {/* Recent Files */}
             {(activeTab === "Overview" || activeTab === "Files") && (
               <motion.div
-                variants={{
-                  hidden: { y: 15, opacity: 0 },
-                  visible: {
-                    y: 0,
-                    opacity: 1,
-                    transition: { type: "spring", stiffness: 300, damping: 24 },
-                  },
-                }}
-                className="glass-panel rounded-[28px] p-6"
+                variants={itemVariants}
+                className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-6"
               >
                 <div className="flex items-start justify-between mb-5">
                   <div>
-                    <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-1">
+                    <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase mb-1">
                       Repository
                     </div>
-                    <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                    <h3 className="text-xl font-extrabold text-[#0f111a] tracking-tight">
                       Recent Files
                     </h3>
                   </div>
+                  {/* ✅ FIXED: View all button now correctly navigates to the Files tab */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -536,22 +488,11 @@ export default function Projects() {
                     View all
                   </motion.button>
                 </div>
-                <div className="divide-y divide-[var(--border)]">
+                <div className="divide-y divide-slate-200/60">
                   {files.map((f) => (
                     <motion.div
                       key={f.name}
-                      variants={{
-                        hidden: { y: 15, opacity: 0 },
-                        visible: {
-                          y: 0,
-                          opacity: 1,
-                          transition: {
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 24,
-                          },
-                        },
-                      }}
+                      variants={itemVariants}
                       whileHover={{
                         x: 6,
                         backgroundColor: "rgba(255,255,255,0.5)",
@@ -565,10 +506,10 @@ export default function Projects() {
                       >
                         {f.type}
                       </motion.div>
-                      <div className="flex-1 min-w-0 text-sm font-bold text-[var(--text-primary)] truncate group-hover:text-indigo-600 transition-colors">
+                      <div className="flex-1 min-w-0 text-sm font-bold text-[#0f111a] truncate group-hover:text-indigo-600 transition-colors">
                         {f.name}
                       </div>
-                      <div className="shrink-0 text-xs text-[var(--text-secondary)] font-medium">
+                      <div className="shrink-0 text-xs text-slate-400 font-medium">
                         {f.size}
                       </div>
                     </motion.div>

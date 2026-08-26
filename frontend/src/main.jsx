@@ -6,10 +6,7 @@ import { NotificationProvider } from "./contexts/NotificationContext.jsx";
 import { ThemeProvider } from "./contexts/ThemeContext.jsx";
 import "./index.css";
 
-if (
-  import.meta.env.DEV &&
-  !sessionStorage.getItem("scholaros_session_loaded")
-) {
+if (import.meta.env.DEV && !sessionStorage.getItem("scholaros_session_loaded")) {
   localStorage.removeItem("scholaros_user");
   sessionStorage.setItem("scholaros_session_loaded", "true");
 }
@@ -23,5 +20,5 @@ createRoot(document.getElementById("root")).render(
         </NotificationProvider>
       </ThemeProvider>
     </BrowserRouter>
-  </StrictMode>,
+  </StrictMode>
 );
