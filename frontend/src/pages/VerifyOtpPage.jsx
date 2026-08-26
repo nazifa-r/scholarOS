@@ -54,7 +54,7 @@ export default function VerifyOtpPage() {
 
       sessionStorage.removeItem("scholaros_verification_email");
 
-      navigate("/dashboard");
+      navigate("/interest-setup");
     } catch (error) {
       const backendErrors = error.data?.errors;
 

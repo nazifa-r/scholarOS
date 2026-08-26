@@ -62,6 +62,7 @@ export default function DashboardShell() {
     if (pathname === "/dashboard/researchers") return "Researchers";
     if (pathname === "/dashboard/notifications") return "Notifications";
     if (pathname === "/dashboard/settings") return "Settings";
+    if (pathname === "/dashboard/profile") return "Profile";
     return "Dashboard";
   };
 
@@ -167,21 +168,26 @@ export default function DashboardShell() {
           </div>
 
           <div className="mt-4 px-3 py-3 rounded-2xl bg-white/5 flex items-center gap-3 border border-white/5">
-            <div className="h-9 w-9 rounded-full bg-linear-to-br from-indigo-400 to-violet-400 flex items-center justify-center shadow-md shadow-indigo-400/20 text-white text-xs font-bold">
-              LM
-            </div>
-            <div className="flex-1">
-              <div className="text-sm font-semibold text-white">
-                Dr. Leila Morgan
+            <Link
+              to="/dashboard/profile"
+              className="flex flex-1 items-center gap-3 min-w-0 hover:opacity-90 transition-opacity"
+            >
+              <div className="h-9 w-9 rounded-full bg-linear-to-br from-indigo-400 to-violet-400 flex items-center justify-center shadow-md shadow-indigo-400/20 text-white text-xs font-bold shrink-0">
+                LM
               </div>
-              <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Online
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-white truncate">
+                  Dr. Leila Morgan
+                </div>
+                <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Online
+                </div>
               </div>
-            </div>
+            </Link>
             <button
               onClick={handleLogout}
-              className="text-slate-500 hover:text-red-400 transition-colors"
+              className="text-slate-500 hover:text-red-400 transition-colors shrink-0"
               title="Logout"
             >
               <LogOut size={16} />
@@ -273,18 +279,23 @@ export default function DashboardShell() {
               </AnimatePresence>
             </div>
 
-            <button className="h-10 w-10 rounded-full bg-linear-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center shadow-md shadow-indigo-400/20 text-sm font-bold">
-              LM
-            </button>
-            <div className="pl-1">
-              <div className="text-sm font-bold text-[var(--text-primary)] leading-tight">
-                Leila Morgan
+            <Link
+              to="/dashboard/profile"
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
+              <div className="h-10 w-10 rounded-full bg-linear-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center shadow-md shadow-indigo-400/20 text-sm font-bold">
+                LM
               </div>
-              <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 font-medium">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Online
+              <div className="pl-1">
+                <div className="text-sm font-bold text-[var(--text-primary)] leading-tight">
+                  Leila Morgan
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Online
+                </div>
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 
