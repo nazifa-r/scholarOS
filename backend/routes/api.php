@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ResearchPaperController;
+use App\Http\Controllers\Api\ResearchAreaController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -70,6 +71,22 @@ Route::prefix('v1')->group(function () {
 
 
     // ========================================================================
+    // RESEARCH AREAS
+    // ========================================================================
+
+    // GET /api/v1/research-areas
+    // Retrieve all available research areas
+    Route::get('/research-areas', [ResearchAreaController::class, 'index']);
+
+    // POST /api/v1/research-areas
+    // Save the authenticated user's selected research areas
+    Route::middleware('auth:sanctum')->post(
+        '/research-areas',
+        [ResearchAreaController::class, 'store']
+    );
+
+
+    // ========================================================================
     // RESEARCH PAPERS
     // ========================================================================
 
@@ -106,7 +123,6 @@ Route::prefix('v1')->group(function () {
             // Delete paper
             // DELETE /api/v1/papers/{id}
             Route::delete('/{id}', [ResearchPaperController::class, 'destroy']);
-
         });
     });
 
