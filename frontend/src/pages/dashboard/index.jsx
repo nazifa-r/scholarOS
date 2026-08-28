@@ -9,8 +9,13 @@ import {
   CircleDot,
   Sparkles,
   ArrowRight,
+  ShieldCheck,
+  Clock3,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import AnimatedCounter from "../../components/ui/AnimatedCounter.jsx";
+import { apiRequest } from "../../utils/api.js";
 
 const stats = [
   {
@@ -100,13 +105,29 @@ const activities = [
     text: "Jonas Richter uploaded a new paper",
     meta: "Federated Imaging · 2m ago",
   },
-  { text: "Dr. Leila Morgan joined BlueGrid Archive", meta: "1h ago" },
+  {
+    text: "Dr. Leila Morgan joined BlueGrid Archive",
+    meta: "1h ago",
+  },
 ];
+
+const VERIFICATION_STATUS = {
+  NOT_SUBMITTED: "not_submitted",
+  PENDING: "pending",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+};
 
 export default function Overview() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterBy, setFilterBy] = useState("All");
   const filterRef = useRef(null);
+
+  const [verificationStatus, setVerificationStatus] = useState(
+    VERIFICATION_STATUS.NOT_SUBMITTED,
+  );
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [verificationLoading, setVerificationLoading] = useState(true);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -114,7 +135,9 @@ export default function Overview() {
         setIsFilterOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -122,23 +145,257 @@ export default function Overview() {
 
   useEffect(() => {
     const handleCloseFilter = () => setIsFilterOpen(false);
+
     window.addEventListener("closeFilter", handleCloseFilter);
-    return () => window.removeEventListener("closeFilter", handleCloseFilter);
+
+    return () =>
+      window.removeEventListener("closeFilter", handleCloseFilter);
+  }, []);
+
+  /*
+   * Load the authenticated user's role verification status.
+   *
+   * A 404 means the user has not submitted a verification request yet.
+   * That is treated as "Not Submitted" rather than an error.
+   */
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchVerificationStatus = async () => {
+      try {
+        const response = await apiRequest("/v1/role-verification");
+
+        if (!isMounted) return;
+
+        const verification = response?.data;
+
+        setVerificationStatus(
+          verification?.status || VERIFICATION_STATUS.NOT_SUBMITTED,
+        );
+
+        setRejectionReason(verification?.rejection_reason || "");
+      } catch (error) {
+        if (!isMounted) return;
+
+        if (error?.status === 404) {
+          setVerificationStatus(VERIFICATION_STATUS.NOT_SUBMITTED);
+          setRejectionReason("");
+        } else {
+          /*
+           * Do not block the dashboard if the verification endpoint
+           * temporarily fails. The dashboard remains usable.
+           */
+          console.error(
+            "Unable to load role verification status:",
+            error,
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setVerificationLoading(false);
+        }
+      }
+    };
+
+    fetchVerificationStatus();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const filteredPapers = useMemo(() => {
     if (filterBy === "All") return papers;
+
     return papers.filter((p) => p.tags.includes(filterBy));
   }, [filterBy]);
 
   const statusColor = (status) => {
     if (status === "Peer Review")
       return "text-[var(--badge-blue-text)] bg-[var(--badge-blue)]";
+
     if (status === "Ready to Publish")
       return "text-[var(--badge-emerald-text)] bg-[var(--badge-emerald)]";
+
     if (status === "Draft")
       return "text-[var(--badge-slate-text)] bg-[var(--badge-slate)]";
+
     return "text-[var(--badge-amber-text)] bg-[var(--badge-amber)]";
+  };
+
+  const renderVerificationStatus = () => {
+    /*
+     * Avoid showing a temporary "Not Submitted" state while the
+     * backend request is still loading.
+     */
+    if (verificationLoading) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-panel rounded-2xl p-4 mt-5"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-slate-100 animate-pulse" />
+
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-32 rounded bg-slate-200 animate-pulse" />
+              <div className="h-3 w-64 max-w-full rounded bg-slate-100 animate-pulse" />
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+
+    if (verificationStatus === VERIFICATION_STATUS.NOT_SUBMITTED) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-panel rounded-2xl p-4 mt-5 border border-[var(--border)]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-slate-100 border border-[var(--border)] flex items-center justify-center">
+              <ShieldCheck size={17} className="text-slate-500" />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-bold text-[var(--text-primary)]">
+                Role verification required
+              </div>
+
+              <div className="text-xs text-[var(--text-secondary)] mt-0.5">
+                Submit your university ID card to verify your Student or
+                Faculty/Supervisor role.
+              </div>
+            </div>
+
+            <a
+              href="/role-setup"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+            >
+              Verify
+              <ArrowRight size={13} />
+            </a>
+          </div>
+        </motion.div>
+      );
+    }
+
+    if (verificationStatus === VERIFICATION_STATUS.PENDING) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-panel rounded-2xl p-4 mt-5 border border-amber-200/70 bg-amber-50/30"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-amber-100/80 border border-amber-200 flex items-center justify-center">
+              <Clock3 size={17} className="text-amber-600" />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-bold text-amber-800">
+                  Verification Pending
+                </div>
+
+                <span className="text-[9px] font-bold uppercase tracking-[0.1em] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                  Under Review
+                </span>
+              </div>
+
+              <div className="text-xs text-amber-700/80 mt-0.5">
+                Your university ID card is being reviewed by an administrator.
+                You can continue using ScholarOS while verification is pending.
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+
+    if (verificationStatus === VERIFICATION_STATUS.APPROVED) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-panel rounded-2xl p-4 mt-5 border border-emerald-200/70 bg-emerald-50/30"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-emerald-100/80 border border-emerald-200 flex items-center justify-center">
+              <CheckCircle2 size={17} className="text-emerald-600" />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-bold text-emerald-800">
+                  Role Verified
+                </div>
+
+                <span className="text-[9px] font-bold uppercase tracking-[0.1em] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                  Approved
+                </span>
+              </div>
+
+              <div className="text-xs text-emerald-700/80 mt-0.5">
+                Your university role has been verified. You can now access
+                ScholarOS research collaboration features.
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+
+    if (verificationStatus === VERIFICATION_STATUS.REJECTED) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-panel rounded-2xl p-4 mt-5 border border-rose-200/70 bg-rose-50/30"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-rose-100/80 border border-rose-200 flex items-center justify-center">
+              <AlertCircle size={17} className="text-rose-600" />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-bold text-rose-800">
+                  Verification Rejected
+                </div>
+
+                <span className="text-[9px] font-bold uppercase tracking-[0.1em] px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">
+                  Action Required
+                </span>
+              </div>
+
+              <div className="text-xs text-rose-700/80 mt-0.5">
+                Your verification request needs to be resubmitted.
+              </div>
+
+              {rejectionReason && (
+                <div className="mt-2 text-xs text-rose-700">
+                  <span className="font-semibold">Reason:</span>{" "}
+                  {rejectionReason}
+                </div>
+              )}
+            </div>
+
+            <a
+              href="/role-setup"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors"
+            >
+              Resubmit
+              <ArrowRight size={13} />
+            </a>
+          </div>
+        </motion.div>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -151,10 +408,14 @@ export default function Overview() {
         <div className="text-xs text-[var(--text-muted)] font-medium mb-1">
           Welcome back,
         </div>
+
         <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
           Dr. Leila Morgan
         </h1>
       </div>
+
+      {/* Role Verification Status */}
+      {renderVerificationStatus()}
 
       <div className="grid grid-cols-4 gap-5 mt-7">
         {stats.map((s) => (
@@ -169,12 +430,15 @@ export default function Overview() {
                 <s.icon size={16} className="text-indigo-500" />
               </div>
             </div>
+
             <div className="text-[10px] font-bold tracking-[0.12em] text-[var(--text-muted)] uppercase mb-1">
               {s.label}
             </div>
+
             <div className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
               <AnimatedCounter value={s.value} suffix={s.suffix} />
             </div>
+
             <div className="text-xs text-[var(--text-secondary)] mt-1.5">
               {s.sub}
             </div>
@@ -192,6 +456,7 @@ export default function Overview() {
               <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase">
                 Research Pipeline
               </div>
+
               <h2 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
                 Recent Papers
               </h2>
@@ -206,9 +471,12 @@ export default function Overview() {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] text-xs font-semibold text-[var(--text-primary)] shadow-sm hover:shadow transition-all duration-200"
               >
                 {filterBy === "All" ? "Filter" : filterBy}
+
                 <ChevronDown
                   size={12}
-                  className={`transition-transform duration-200 ${isFilterOpen ? "rotate-180" : ""}`}
+                  className={`transition-transform duration-200 ${
+                    isFilterOpen ? "rotate-180" : ""
+                  }`}
                 />
               </button>
 
@@ -234,7 +502,11 @@ export default function Overview() {
                           setFilterBy(item);
                           setIsFilterOpen(false);
                         }}
-                        className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${filterBy === item ? "bg-indigo-50 text-indigo-700 font-semibold" : "text-slate-700 hover:bg-indigo-50"}`}
+                        className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+                          filterBy === item
+                            ? "bg-indigo-50 text-indigo-700 font-semibold"
+                            : "text-slate-700 hover:bg-indigo-50"
+                        }`}
                       >
                         {item}
                       </button>
@@ -252,35 +524,46 @@ export default function Overview() {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className={`${idx !== 0 ? "border-t border-[var(--border)] pt-5" : ""} block group cursor-pointer`}
+                className={`${
+                  idx !== 0
+                    ? "border-t border-[var(--border)] pt-5"
+                    : ""
+                } block group cursor-pointer`}
                 whileHover={{ x: 6 }}
               >
                 <div className="flex items-start gap-4 pt-0.5">
                   <div className="text-[11px] text-[var(--text-muted)] font-medium w-14 shrink-0 pt-0.5">
                     {p.id}
                   </div>
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       {p.tags.map((t) => (
                         <span
                           key={t}
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${statusColor(t)}`}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${statusColor(
+                            t,
+                          )}`}
                         >
                           {t}
                         </span>
                       ))}
                     </div>
+
                     <h3 className="text-base font-bold text-[var(--text-primary)] leading-snug mb-1 group-hover:text-indigo-600 transition-colors">
                       {p.title}
                     </h3>
+
                     <div className="text-xs text-[var(--text-secondary)]">
                       {p.authors}
                     </div>
                   </div>
+
                   <div className="text-right shrink-0 pl-4">
                     <div className="text-lg font-extrabold text-[var(--text-primary)]">
                       {p.citations}
                     </div>
+
                     <div className="text-[10px] text-[var(--text-muted)] tracking-[0.08em] uppercase">
                       Citations
                     </div>
@@ -296,9 +579,11 @@ export default function Overview() {
             <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-1">
               Active Workspace
             </div>
+
             <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight mb-6">
               Priority Tasks
             </h3>
+
             <div className="space-y-4">
               {tasks.map((t, i) => (
                 <label
@@ -309,10 +594,12 @@ export default function Overview() {
                     type="checkbox"
                     className="mt-0.5 h-5 w-5 rounded-md border-2 border-[var(--border)] text-indigo-500 focus:ring-indigo-200 accent-indigo-500"
                   />
+
                   <div className="flex-1">
                     <div className="text-sm font-semibold text-[var(--text-primary)] leading-snug group-hover:text-indigo-600 transition-colors">
                       {t.label}
                     </div>
+
                     <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] mt-1">
                       <CircleDot size={10} className="text-indigo-400" />
                       {t.meta}
@@ -327,9 +614,11 @@ export default function Overview() {
             <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-1">
               Live Feed
             </div>
+
             <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight mb-6">
               Activity
             </h3>
+
             <div className="space-y-5">
               {activities.map((a, i) => (
                 <motion.div
@@ -344,6 +633,7 @@ export default function Overview() {
                     </span>{" "}
                     {a.text.split(" ").slice(2).join(" ")}
                   </p>
+
                   <p className="text-xs text-[var(--text-secondary)] mt-1">
                     {a.meta}
                   </p>
@@ -362,24 +652,30 @@ export default function Overview() {
       >
         <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
         <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
+
         <div className="relative z-10 flex items-start gap-6">
           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-400 to-violet-400 flex items-center justify-center shadow-xl shadow-indigo-400/20 shrink-0">
             <Sparkles size={24} className="text-white" />
           </div>
+
           <div className="flex-1">
             <div className="text-[10px] font-bold tracking-[0.15em] text-indigo-300 uppercase mb-1.5">
               ScholarOS Insight
             </div>
+
             <h3 className="text-xl font-extrabold tracking-tight mb-2">
               Your reviewer turnaround is accelerating.
             </h3>
+
             <p className="text-sm text-slate-300 leading-relaxed max-w-2xl">
               Teams using structured paper threads and visible milestone
               ownership are closing feedback loops 3x faster.
             </p>
           </div>
+
           <button className="self-center shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all">
-            View Analytics <ArrowRight size={16} />
+            View Analytics
+            <ArrowRight size={16} />
           </button>
         </div>
       </motion.div>

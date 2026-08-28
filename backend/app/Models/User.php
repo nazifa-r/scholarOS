@@ -50,4 +50,12 @@ class User extends Authenticatable
             'user_research_areas'
         );
     }
+
+    /**
+     * The user's role verification request.
+     */
+    public function roleVerification()
+    {
+        return $this->hasOne(RoleVerification::class);
+    }
 }

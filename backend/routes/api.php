@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ResearchPaperController;
 use App\Http\Controllers\Api\ResearchAreaController;
+use App\Http\Controllers\Api\RoleVerificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -84,6 +85,29 @@ Route::prefix('v1')->group(function () {
         '/research-areas',
         [ResearchAreaController::class, 'store']
     );
+
+
+    // ========================================================================
+    // ROLE VERIFICATION
+    // ========================================================================
+
+    // Protected role verification routes
+    Route::middleware('auth:sanctum')->group(function () {
+
+        // POST /api/v1/role-verification
+        // Submit a role verification request
+        Route::post(
+            '/role-verification',
+            [RoleVerificationController::class, 'store']
+        );
+
+        // GET /api/v1/role-verification
+        // Retrieve the authenticated user's verification status
+        Route::get(
+            '/role-verification',
+            [RoleVerificationController::class, 'show']
+        );
+    });
 
 
     // ========================================================================
