@@ -3,7 +3,9 @@ import RoleSetup from "./pages/RoleSetup.jsx";
 import VerifyOtpPage from "./pages/VerifyOtpPage.jsx";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+
 import DashboardShell from "./layout/DashboardShell.jsx";
+import AdminShell from "./layout/AdminShell.jsx";
 
 // Dashboard Sub-Pages
 import Overview from "./pages/dashboard/index.jsx";
@@ -14,6 +16,9 @@ import Notifications from "./pages/dashboard/notifications.jsx";
 import Settings from "./pages/dashboard/settings.jsx";
 import UploadPaper from "./pages/UploadPaper.jsx";
 import ProfilePage from "./pages/dashboard/profile.jsx";
+
+// Admin Pages
+import VerificationDashboard from "./pages/admin/VerificationDashboard.jsx";
 
 // Public Pages
 import LandingPage from "./pages/LandingPage.jsx";
@@ -44,6 +49,14 @@ export default function AppRouter() {
           <Route path="settings" element={<Settings />} />
           <Route path="upload" element={<UploadPaper />} />
           <Route path="profile" element={<ProfilePage />} />
+        </Route>
+
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminShell />}>
+          <Route
+            path="verification"
+            element={<VerificationDashboard />}
+          />
         </Route>
 
         {/* 404 Fallback */}
