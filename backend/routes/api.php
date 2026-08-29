@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\PaperController;
 use App\Http\Controllers\Api\ResearcherController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PaperSubmissionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -173,7 +174,7 @@ Route::prefix('v1')->group(function () {
         );
 
         // ------------------------------------------------------------
-        // ⭐ NEW: SEARCH PAPERS
+        // SEARCH PAPERS
         // GET /api/v1/papers/search?q=title&exact=true
         // ------------------------------------------------------------
         Route::get(
@@ -216,6 +217,57 @@ Route::prefix('v1')->group(function () {
                 '/{id}',
                 [ResearchPaperController::class, 'destroy']
             );
+        });
+    });
+
+    // ========================================================================
+    // PAPER SUBMISSIONS (NEW)
+    // ========================================================================
+
+    Route::prefix('submissions')->group(function () {
+
+        // ------------------------------------------------------------
+        // AUTHENTICATED USER ROUTES
+        // ------------------------------------------------------------
+        
+        Route::middleware('auth:sanctum')->group(function () {
+            
+            // GET /api/v1/submissions - Get user's papers
+            Route::get('/', [PaperSubmissionController::class, 'index']);
+            
+            // POST /api/v1/submissions - Create draft
+            Route::post('/', [PaperSubmissionController::class, 'store']);
+            
+            // GET /api/v1/submissions/{id} - Get single paper
+            Route::get('/{id}', [PaperSubmissionController::class, 'show']);
+            
+            // PUT /api/v1/submissions/{id} - Update draft
+            Route::put('/{id}', [PaperSubmissionController::class, 'update']);
+            
+            // DELETE /api/v1/submissions/{id} - Delete paper (draft or rejected only)
+            Route::delete('/{id}', [PaperSubmissionController::class, 'destroy']);
+            
+            // POST /api/v1/submissions/{id}/submit - Submit for approval
+            Route::post('/{id}/submit', [PaperSubmissionController::class, 'submit']);
+        });
+        
+        // ------------------------------------------------------------
+        // ADMIN ROUTES (Review & Approve)
+        // ------------------------------------------------------------
+        
+        Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+            
+            // GET /api/v1/submissions/review - Get papers for review
+            Route::get('/review', [PaperSubmissionController::class, 'reviewIndex']);
+            
+            // POST /api/v1/submissions/{id}/approve - Approve paper
+            Route::post('/{id}/approve', [PaperSubmissionController::class, 'approve']);
+            
+            // POST /api/v1/submissions/{id}/reject - Reject paper
+            Route::post('/{id}/reject', [PaperSubmissionController::class, 'reject']);
+            
+            // POST /api/v1/submissions/{id}/return-to-draft - Return to draft
+            Route::post('/{id}/return-to-draft', [PaperSubmissionController::class, 'returnToDraft']);
         });
     });
 
