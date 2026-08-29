@@ -221,7 +221,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // ========================================================================
-    // PAPER SUBMISSIONS (NEW)
+    // PAPER SUBMISSIONS
     // ========================================================================
 
     Route::prefix('submissions')->group(function () {
@@ -272,6 +272,59 @@ Route::prefix('v1')->group(function () {
     });
 
     // ========================================================================
+    // PROJECTS
+    // ========================================================================
+
+    Route::prefix('projects')->group(function () {
+
+        Route::middleware('auth:sanctum')->group(function () {
+            
+            // ------------------------------------------------------------
+            // GET ALL PROJECTS
+            // GET /api/v1/projects
+            // ------------------------------------------------------------
+            Route::get('/', [ProjectController::class, 'index']);
+            
+            // ------------------------------------------------------------
+            // CREATE PROJECT
+            // POST /api/v1/projects
+            // ------------------------------------------------------------
+            Route::post('/', [ProjectController::class, 'store']);
+            
+            // ------------------------------------------------------------
+            // GET SINGLE PROJECT
+            // GET /api/v1/projects/{id}
+            // ------------------------------------------------------------
+            Route::get('/{id}', [ProjectController::class, 'show']);
+            
+            // ------------------------------------------------------------
+            // UPDATE PROJECT
+            // PUT /api/v1/projects/{id}
+            // ------------------------------------------------------------
+            Route::put('/{id}', [ProjectController::class, 'update']);
+            
+            // ------------------------------------------------------------
+            // DELETE PROJECT
+            // DELETE /api/v1/projects/{id}
+            // ------------------------------------------------------------
+            Route::delete('/{id}', [ProjectController::class, 'destroy']);
+            
+            // ------------------------------------------------------------
+            // PROJECT MEMBERS
+            // ------------------------------------------------------------
+            
+            // GET /api/v1/projects/{id}/members - Get members
+            Route::get('/{id}/members', [ProjectController::class, 'members']);
+            
+            // POST /api/v1/projects/{id}/members - Add member
+            Route::post('/{id}/members', [ProjectController::class, 'addMember']);
+            
+            // DELETE /api/v1/projects/{id}/members/{memberId} - Remove member
+            Route::delete('/{id}/members/{memberId}', [ProjectController::class, 'removeMember']);
+        });
+    });
+
+    // ========================================================================
     // DASHBOARD ROUTES
     // ========================================================================
 
@@ -291,27 +344,27 @@ Route::prefix('v1')->group(function () {
         Route::get('/recent-activity', [DashboardController::class, 'recentActivity']);
 
         // ------------------------------------------------------------
-        // PROJECTS
+        // PROJECTS (Dashboard)
         // ------------------------------------------------------------
         Route::get('/projects', [ProjectController::class, 'index']);
         Route::get('/projects/{id}', [ProjectController::class, 'show']);
         Route::post('/projects', [ProjectController::class, 'store']);
 
         // ------------------------------------------------------------
-        // PAPERS
+        // PAPERS (Dashboard)
         // ------------------------------------------------------------
         Route::get('/papers', [PaperController::class, 'index']);
         Route::get('/papers/stats', [PaperController::class, 'stats']);
 
         // ------------------------------------------------------------
-        // RESEARCHERS
+        // RESEARCHERS (Dashboard)
         // ------------------------------------------------------------
         Route::get('/researchers', [ResearcherController::class, 'index']);
         Route::get('/researchers/{id}', [ResearcherController::class, 'show']);
         Route::get('/researchers/search', [ResearcherController::class, 'search']);
 
         // ------------------------------------------------------------
-        // NOTIFICATIONS
+        // NOTIFICATIONS (Dashboard)
         // ------------------------------------------------------------
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::get('/notifications/count', [NotificationController::class, 'count']);
@@ -334,6 +387,7 @@ Route::prefix('v1')->group(function () {
                 'department',
                 'projectsAsMember',
                 'supervisedProjects',
+                'createdProjects',
             ]);
 
             return response()->json([

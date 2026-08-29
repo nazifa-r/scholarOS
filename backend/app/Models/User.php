@@ -85,7 +85,7 @@ class User extends Authenticatable
     }
 
     // ============================================
-    // DASHBOARD RELATIONSHIPS (ADD THESE)
+    // DASHBOARD RELATIONSHIPS
     // ============================================
 
     /**
@@ -157,7 +157,7 @@ class User extends Authenticatable
      */
     public function authoredPapers()
     {
-        return $this->belongsToMany(ResearchPaper::class, 'paper_authors');
+        return $this->belongsToMany(ResearchPaper::class, 'paper_authors', 'paper_id', 'user_id');
     }
 
     /**
@@ -249,7 +249,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->role && $this->role->name === 'sys_admin';
+        return $this->role && in_array($this->role->name, ['dept_admin', 'sys_admin']);
     }
 
     /**

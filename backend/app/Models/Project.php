@@ -38,7 +38,10 @@ class Project extends Model
         'is_public' => false,
     ];
 
-    // Relationships
+    // ============================================
+    // RELATIONSHIPS
+    // ============================================
+
     public function supervisor()
     {
         return $this->belongsTo(User::class, 'supervisor_id');
@@ -69,29 +72,22 @@ class Project extends Model
         return $this->hasMany(Task::class);
     }
 
-    public function files()
-    {
-        return $this->hasMany(File::class);
-    }
+    // Commented out temporarily - File model doesn't exist yet
+    // public function files()
+    // {
+    //     return $this->hasMany(File::class);
+    // }
 
     public function comments()
     {
         return $this->morphMany(Comment::class, 'entity');
     }
 
-    // Scopes
-    public function scopeActive($query)
-    {
-        return $query->whereIn('status', ['planning', 'in_progress']);
-    }
+    // ============================================
+    // ACCESSORS
+    // ============================================
 
-    public function scopeCompleted($query)
-    {
-        return $query->where('status', 'completed');
-    }
-
-    // Accessors
-    public function getStatusColorAttribute()
+    public function getStatusColorAttribute(): string
     {
         $colors = [
             'planning' => 'blue',
@@ -102,8 +98,92 @@ class Project extends Model
         return $colors[$this->status] ?? 'gray';
     }
 
-    public function getProgressAttribute()
+    public function getStatusLabelAttribute(): string
+    {
+        $labels = [
+            'planning' => 'Planning',
+            'in_progress' => 'In Progress',
+            'completed' => 'Completed',
+            'archived' => 'Archived',
+        ];
+        return $labels[$this->status] ?? 'Unknown';
+    }
+
+    public function getMemberCountAttribute(): int
+    {
+        return $this->members()->count();
+    }
+
+    public function getTaskCountAttribute(): int
+    {
+        return $this->tasks()->count();
+    }
+
+    public function getCompletedTaskCountAttribute(): int
+    {
+        return $this->tasks()->where('status', 'completed')->count();
+    }
+
+    public function getProgressAttribute(): int
     {
         return $this->progress_pct;
+    }
+
+    // ============================================
+    // SCOPES
+    // ============================================
+
+    public function scopeActive($query)
+    {
+        return $query->whereIn('status', ['planning', 'in_progress']);
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->where('status', 'archived');
+    }
+
+    public function scopeForUser($query, int $userId)
+    {
+        return $query->where(function ($q) use ($userId) {
+            $q->whereHas('members', function ($sub) use ($userId) {
+                $sub->where('user_id', $userId);
+            })->orWhere('created_by', $userId)
+              ->orWhere('supervisor_id', $userId);
+        });
+    }
+
+    // ============================================
+    // AUTHORIZATION HELPERS
+    // ============================================
+
+    public function isMember(int $userId): bool
+    {
+        return $this->members()->where('user_id', $userId)->exists();
+    }
+
+    public function isSupervisor(int $userId): bool
+    {
+        return $this->supervisor_id === $userId;
+    }
+
+    public function isCreator(int $userId): bool
+    {
+        return $this->created_by === $userId;
+    }
+
+    public function canEdit(int $userId): bool
+    {
+        return $this->isCreator($userId) || $this->isSupervisor($userId);
+    }
+
+    public function canManageMembers(int $userId): bool
+    {
+        return $this->isCreator($userId) || $this->isSupervisor($userId);
     }
 }

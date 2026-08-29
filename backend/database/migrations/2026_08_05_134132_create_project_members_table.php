@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('project_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->enum('role', ['supervisor', 'co_supervisor', 'member', 'viewer'])->default('member');
+            $table->enum('role', ['supervisor', 'co_supervisor', 'member', 'viewer', 'admin'])->default('member');
             $table->timestamp('joined_at')->useCurrent();
             $table->timestamp('left_at')->nullable();
             $table->boolean('is_active')->default(true);
