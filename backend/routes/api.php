@@ -219,16 +219,19 @@ Route::prefix('v1')->group(function () {
     // ========================================================================
 
     // GET /api/v1/user
-    Route::middleware('auth:sanctum')->get(
-        '/user',
-        function (Request $request) {
-            $user = $request->user()->load('role');
+   Route::middleware('auth:sanctum')->get(
+    '/user',
+    function (Request $request) {
+        $user = $request->user()->load([
+            'role',
+            'researchAreas',
+        ]);
 
-            return response()->json([
-                'success' => true,
-                'data' => $user,
-            ]);
-        }
-    );
+        return response()->json([
+            'success' => true,
+            'data' => $user,
+        ]);
+    }
+);
 
 });

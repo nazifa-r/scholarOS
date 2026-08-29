@@ -171,12 +171,11 @@ export default function ProfilePage() {
 
   const institution = user?.institution || "Institution not provided";
 
-  const interests = user?.research_interests
-    ? user.research_interests
-        .split(",")
-        .map((interest) => interest.trim())
-        .filter(Boolean)
-    : [];
+  const interests = Array.isArray(user?.research_areas)
+  ? user.research_areas
+      .map((area) => area?.name)
+      .filter(Boolean)
+  : [];
 
   const initials = getInitials(name);
 
