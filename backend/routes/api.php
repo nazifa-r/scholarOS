@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ResearchPaperController;
 use App\Http\Controllers\Api\ResearchAreaController;
 use App\Http\Controllers\Api\RoleVerificationController;
+use App\Http\Controllers\Api\Admin\VerificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 | Versioned application routes are under /api/v1/*
 |
 */
+
 
 // ============================================================================
 // AUTHENTICATION ROUTES
@@ -71,12 +73,59 @@ Route::prefix('v1')->group(function () {
 
 
     // ========================================================================
+    // ADMIN VERIFICATION
+    // ========================================================================
+
+    // Protected admin verification routes.
+    //
+    // auth:sanctum -> user must be authenticated
+    // admin         -> user must have an administrator role
+    //
+    Route::middleware(['auth:sanctum', 'admin'])
+        ->prefix('admin/verifications')
+        ->group(function () {
+
+            // GET /api/v1/admin/verifications
+            // Retrieve verification requests
+            Route::get('/', [VerificationController::class, 'index']);
+
+            // GET /api/v1/admin/verifications/{id}
+            // Retrieve a single verification request
+            Route::get('/{id}', [VerificationController::class, 'show']);
+
+            // POST /api/v1/admin/verifications/{id}/approve
+            // Approve a pending verification request
+            Route::post(
+                '/{id}/approve',
+                [VerificationController::class, 'approve']
+            );
+
+            // POST /api/v1/admin/verifications/{id}/reject
+            // Reject a pending verification request
+            Route::post(
+                '/{id}/reject',
+                [VerificationController::class, 'reject']
+            );
+
+            // GET /api/v1/admin/verifications/{id}/id-card
+            // Securely retrieve the uploaded university ID card
+            Route::get(
+                '/{id}/id-card',
+                [VerificationController::class, 'idCard']
+            );
+        });
+
+
+    // ========================================================================
     // RESEARCH AREAS
     // ========================================================================
 
     // GET /api/v1/research-areas
     // Retrieve all available research areas
-    Route::get('/research-areas', [ResearchAreaController::class, 'index']);
+    Route::get(
+        '/research-areas',
+        [ResearchAreaController::class, 'index']
+    );
 
     // POST /api/v1/research-areas
     // Save the authenticated user's selected research areas
@@ -119,14 +168,20 @@ Route::prefix('v1')->group(function () {
         // GET ALL PAPERS
         // GET /api/v1/papers
         // ------------------------------------------------------------
-        Route::get('/', [ResearchPaperController::class, 'index']);
+        Route::get(
+            '/',
+            [ResearchPaperController::class, 'index']
+        );
 
 
         // ------------------------------------------------------------
         // GET SINGLE PAPER
         // GET /api/v1/papers/{id}
         // ------------------------------------------------------------
-        Route::get('/{id}', [ResearchPaperController::class, 'show']);
+        Route::get(
+            '/{id}',
+            [ResearchPaperController::class, 'show']
+        );
 
 
         // ------------------------------------------------------------
@@ -137,15 +192,24 @@ Route::prefix('v1')->group(function () {
 
             // Create paper
             // POST /api/v1/papers
-            Route::post('/', [ResearchPaperController::class, 'store']);
+            Route::post(
+                '/',
+                [ResearchPaperController::class, 'store']
+            );
 
             // Update paper
             // PUT /api/v1/papers/{id}
-            Route::put('/{id}', [ResearchPaperController::class, 'update']);
+            Route::put(
+                '/{id}',
+                [ResearchPaperController::class, 'update']
+            );
 
             // Delete paper
             // DELETE /api/v1/papers/{id}
-            Route::delete('/{id}', [ResearchPaperController::class, 'destroy']);
+            Route::delete(
+                '/{id}',
+                [ResearchPaperController::class, 'destroy']
+            );
         });
     });
 
@@ -155,11 +219,14 @@ Route::prefix('v1')->group(function () {
     // ========================================================================
 
     // GET /api/v1/user
-    Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-        return response()->json([
-            'success' => true,
-            'data' => $request->user()
-        ]);
-    });
+    Route::middleware('auth:sanctum')->get(
+        '/user',
+        function (Request $request) {
+            return response()->json([
+                'success' => true,
+                'data' => $request->user()
+            ]);
+        }
+    );
 
 });
