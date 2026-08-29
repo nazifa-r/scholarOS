@@ -159,48 +159,50 @@ export default function Overview() {
    * That is treated as "Not Submitted" rather than an error.
    */
   useEffect(() => {
-    let isMounted = true;
+  let isMounted = true;
 
-    const fetchVerificationStatus = async () => {
-      try {
-        const response = await apiRequest("/v1/role-verification");
+  const fetchVerificationStatus = async () => {
+    try {
+      setVerificationLoading(true);
 
-        if (!isMounted) return;
+      const response = await apiRequest("/v1/role-verification");
 
-        const verification = response?.data;
+      if (!isMounted) return;
 
+      const verification = response?.data;
+
+      if (verification) {
         setVerificationStatus(
-          verification?.status || VERIFICATION_STATUS.NOT_SUBMITTED,
+          verification.status || VERIFICATION_STATUS.NOT_SUBMITTED,
         );
-
-        setRejectionReason(verification?.rejection_reason || "");
-      } catch (error) {
-        if (!isMounted) return;
-
-        if (error?.status === 404) {
-          setVerificationStatus(VERIFICATION_STATUS.NOT_SUBMITTED);
-          setRejectionReason("");
-        } else {
-          /*
-           * Do not block the dashboard if the verification endpoint
-           * temporarily fails. The dashboard remains usable.
-           */
-          console.error(
-            "Unable to load role verification status:",
-            error,
-          );
-        }
-      } finally {
-        if (isMounted) {
-          setVerificationLoading(false);
-        }
+        setRejectionReason(verification.rejection_reason || "");
+      } else {
+        setVerificationStatus(VERIFICATION_STATUS.NOT_SUBMITTED);
+        setRejectionReason("");
       }
-    };
+    } catch (error) {
+      if (!isMounted) return;
 
-    fetchVerificationStatus();
+      if (error?.status === 404) {
+        setVerificationStatus(VERIFICATION_STATUS.NOT_SUBMITTED);
+        setRejectionReason("");
+      } else {
+        console.error(
+          "Unable to load role verification status:",
+          error,
+        );
+      }
+    } finally {
+      if (isMounted) {
+        setVerificationLoading(false);
+      }
+    }
+  };
 
-    return () => {
-      isMounted = false;
+  fetchVerificationStatus();
+
+  return () => {
+    isMounted = false;
     };
   }, []);
 

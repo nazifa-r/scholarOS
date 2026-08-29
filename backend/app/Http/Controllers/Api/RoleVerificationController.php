@@ -95,21 +95,26 @@ class RoleVerificationController extends Controller
     /**
      * Get the authenticated user's role verification status.
      */
-    public function show(Request $request)
-    {
-        $verification = $request->user()->roleVerification;
+        /**
+ * Get the authenticated user's role verification status.
+ */
+public function show(Request $request)
+{
+    $user = $request->user();
 
-        if (!$verification) {
-            return response()->json([
-                'success' => true,
-                'message' => 'No role verification request has been submitted.',
-                'data' => null,
-            ]);
-        }
+    $verification = RoleVerification::where('user_id', $user->id)->first();
 
+    if (!$verification) {
         return response()->json([
             'success' => true,
-            'data' => $verification,
+            'message' => 'No role verification request has been submitted.',
+            'data' => null,
         ]);
     }
+
+    return response()->json([
+        'success' => true,
+        'data' => $verification,
+    ]);
+}
 }

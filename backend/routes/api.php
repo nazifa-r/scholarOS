@@ -222,9 +222,11 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->get(
         '/user',
         function (Request $request) {
+            $user = $request->user()->load('role');
+
             return response()->json([
                 'success' => true,
-                'data' => $request->user()
+                'data' => $user,
             ]);
         }
     );
