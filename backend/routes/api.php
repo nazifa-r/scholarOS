@@ -5,6 +5,11 @@ use App\Http\Controllers\Api\ResearchPaperController;
 use App\Http\Controllers\Api\ResearchAreaController;
 use App\Http\Controllers\Api\RoleVerificationController;
 use App\Http\Controllers\Api\Admin\VerificationController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\PaperController;
+use App\Http\Controllers\Api\ResearcherController;
+use App\Http\Controllers\Api\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -17,7 +22,6 @@ use Illuminate\Support\Facades\Route;
 | Versioned application routes are under /api/v1/*
 |
 */
-
 
 // ============================================================================
 // AUTHENTICATION ROUTES
@@ -51,7 +55,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-
 // ============================================================================
 // VERSION 1 API ROUTES
 // ============================================================================
@@ -70,7 +73,6 @@ Route::prefix('v1')->group(function () {
             'timestamp' => now()->toISOString()
         ]);
     });
-
 
     // ========================================================================
     // ADMIN VERIFICATION
@@ -115,7 +117,6 @@ Route::prefix('v1')->group(function () {
             );
         });
 
-
     // ========================================================================
     // RESEARCH AREAS
     // ========================================================================
@@ -133,7 +134,6 @@ Route::prefix('v1')->group(function () {
         '/research-areas',
         [ResearchAreaController::class, 'store']
     );
-
 
     // ========================================================================
     // ROLE VERIFICATION
@@ -157,7 +157,6 @@ Route::prefix('v1')->group(function () {
         );
     });
 
-
     // ========================================================================
     // RESEARCH PAPERS
     // ========================================================================
@@ -173,7 +172,6 @@ Route::prefix('v1')->group(function () {
             [ResearchPaperController::class, 'index']
         );
 
-
         // ------------------------------------------------------------
         // GET SINGLE PAPER
         // GET /api/v1/papers/{id}
@@ -182,7 +180,6 @@ Route::prefix('v1')->group(function () {
             '/{id}',
             [ResearchPaperController::class, 'show']
         );
-
 
         // ------------------------------------------------------------
         // PROTECTED PAPER ROUTES
@@ -213,25 +210,75 @@ Route::prefix('v1')->group(function () {
         });
     });
 
+    // ========================================================================
+    // DASHBOARD ROUTES (ADD THESE)
+    // ========================================================================
+
+    // All dashboard routes require authentication
+    Route::middleware('auth:sanctum')->prefix('dashboard')->group(function () {
+
+        // ------------------------------------------------------------
+        // STATISTICS
+        // GET /api/v1/dashboard/stats
+        // ------------------------------------------------------------
+        Route::get('/stats', [DashboardController::class, 'stats']);
+
+        // ------------------------------------------------------------
+        // RECENT ACTIVITY
+        // GET /api/v1/dashboard/recent-activity
+        // ------------------------------------------------------------
+        Route::get('/recent-activity', [DashboardController::class, 'recentActivity']);
+
+        // ------------------------------------------------------------
+        // PROJECTS
+        // ------------------------------------------------------------
+        Route::get('/projects', [ProjectController::class, 'index']);
+        Route::get('/projects/{id}', [ProjectController::class, 'show']);
+        Route::post('/projects', [ProjectController::class, 'store']);
+
+        // ------------------------------------------------------------
+        // PAPERS
+        // ------------------------------------------------------------
+        Route::get('/papers', [PaperController::class, 'index']);
+        Route::get('/papers/stats', [PaperController::class, 'stats']);
+
+        // ------------------------------------------------------------
+        // RESEARCHERS
+        // ------------------------------------------------------------
+        Route::get('/researchers', [ResearcherController::class, 'index']);
+        Route::get('/researchers/{id}', [ResearcherController::class, 'show']);
+        Route::get('/researchers/search', [ResearcherController::class, 'search']);
+
+        // ------------------------------------------------------------
+        // NOTIFICATIONS
+        // ------------------------------------------------------------
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/count', [NotificationController::class, 'count']);
+        Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    });
 
     // ========================================================================
     // VERSIONED USER PROFILE
     // ========================================================================
 
     // GET /api/v1/user
-   Route::middleware('auth:sanctum')->get(
-    '/user',
-    function (Request $request) {
-        $user = $request->user()->load([
-            'role',
-            'researchAreas',
-        ]);
+    Route::middleware('auth:sanctum')->get(
+        '/user',
+        function (Request $request) {
+            $user = $request->user()->load([
+                'role',
+                'researchAreas',
+                'department',
+                'projectsAsMember',
+                'supervisedProjects',
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $user,
-        ]);
-    }
-);
-
+            return response()->json([
+                'success' => true,
+                'data' => $user,
+            ]);
+        }
+    );
 });
