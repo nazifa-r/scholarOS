@@ -12,14 +12,14 @@ export default function SectionHeading({ eyebrow, title, description, align = "l
       transition={{ duration: 0.6, ease: "easeOut" }}
       className={cn("flex max-w-3xl flex-col gap-4", aligned, className)}
     >
-      <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-200/60 bg-white/75 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-blue-700 shadow-sm backdrop-blur-xl">
+      <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--badge-blue-text)] shadow-sm backdrop-blur-xl">
         <span className="h-2 w-2 rounded-full bg-cyan-400" />
         {eyebrow}
       </div>
-      <h2 className="text-4xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl lg:text-[3.5rem] lg:leading-[1.02]">
+      <h2 className="text-4xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] sm:text-5xl lg:text-[3.5rem] lg:leading-[1.02]">
         {title}
       </h2>
-      <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+      <p className="max-w-2xl text-base leading-8 text-[var(--text-secondary)] sm:text-lg">
         {description}
       </p>
     </motion.div>

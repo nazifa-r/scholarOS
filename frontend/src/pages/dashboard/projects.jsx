@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Layers, Check } from "lucide-react";
-import { cn } from "../../utils/cn.js";
 
 const tabs = [
   "Overview",
@@ -27,7 +26,7 @@ const openTasks = [
     title: "Finalize ethics appendix for dataset intake",
     meta: "Dr. Leila Morgan · Due Tomorrow",
     badge: "High",
-    badgeStyle: "text-amber-700 bg-amber-50",
+    badgeStyle: "text-[var(--warning)] bg-[var(--warning-bg)]",
     done: false,
   },
   {
@@ -35,7 +34,7 @@ const openTasks = [
     title: "Cross-check sensor calibration logs with Lab 3",
     meta: "Aarav Patel · Due May 19",
     badge: "Medium",
-    badgeStyle: "text-blue-600 bg-blue-50",
+    badgeStyle: "text-[var(--info)] bg-[var(--info-bg)]",
     done: false,
   },
   {
@@ -43,7 +42,7 @@ const openTasks = [
     title: "Migrate legacy climate datasets to archive schema",
     meta: "Sofia Chen · Completed May 12",
     badge: "Done",
-    badgeStyle: "text-slate-600 bg-slate-100",
+    badgeStyle: "text-[var(--muted-foreground)] bg-[var(--muted)]",
     done: true,
   },
 ];
@@ -84,25 +83,25 @@ const files = [
     type: "PDF",
     name: "ethics_appendix_draft.pdf",
     size: "2.1 MB",
-    color: "text-red-500 bg-red-50",
+    color: "text-red-500 bg-red-500/10",
   },
   {
     type: "XLS",
     name: "sensor_calibration_log.xlsx",
     size: "840 KB",
-    color: "text-emerald-600 bg-emerald-50",
+    color: "text-emerald-500 bg-emerald-500/10",
   },
   {
     type: "ZIP",
     name: "climate_dataset_v3.zip",
     size: "128 MB",
-    color: "text-violet-600 bg-violet-50",
+    color: "text-violet-500 bg-violet-500/10",
   },
   {
     type: "DOC",
     name: "paper_draft_section2.docx",
     size: "312 KB",
-    color: "text-blue-600 bg-blue-50",
+    color: "text-blue-500 bg-blue-500/10",
   },
 ];
 
@@ -133,7 +132,6 @@ export default function Projects() {
     setTaskStates(newState);
   };
 
-  // Now fully functional: Opens a mock alert to simulate an Invite Modal
   const handleInvite = () => {
     alert("📧 Invite member modal opened! You can invite collaborators here.");
   };
@@ -145,7 +143,6 @@ export default function Projects() {
       transition={{ duration: 0.4 }}
       className="space-y-6 pb-8"
     >
-      {/* Project Hero */}
       <motion.div
         whileHover={{
           scale: 1.003,
@@ -188,7 +185,7 @@ export default function Projects() {
               whileHover={{ scale: 1.05 }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-400/10 border border-emerald-400/30 text-emerald-300 text-sm font-semibold mb-4"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />{" "}
               Active
             </motion.span>
             <div className="text-xs text-slate-400 mb-2">
@@ -207,12 +204,11 @@ export default function Projects() {
         </div>
       </motion.div>
 
-      {/* Tabs */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="inline-flex items-center gap-1 rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.05)] p-1.5 overflow-x-auto"
+        className="inline-flex items-center gap-1 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-[var(--shadow-card)] p-1.5 overflow-x-auto"
       >
         {tabs.map((tab) => (
           <motion.button
@@ -220,11 +216,7 @@ export default function Projects() {
             onClick={() => setActiveTab(tab)}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.95 }}
-            className={`relative px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-              activeTab === tab
-                ? "text-white"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
+            className={`relative px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeTab === tab ? "text-white" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
           >
             {activeTab === tab && (
               <motion.div
@@ -238,7 +230,6 @@ export default function Projects() {
         ))}
       </motion.div>
 
-      {/* Main Grid - Dynamic Content based on Active Tab */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -248,21 +239,19 @@ export default function Projects() {
           transition={{ duration: 0.3 }}
           className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start"
         >
-          {/* Left column */}
           <div className="space-y-6">
-            {/* About */}
             {activeTab === "Overview" && (
               <motion.div
                 variants={itemVariants}
-                className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-8"
+                className="glass-panel rounded-[28px] p-8"
               >
-                <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase mb-1">
+                <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-1">
                   Project Summary
                 </div>
-                <h2 className="text-xl font-extrabold text-[#0f111a] tracking-tight mb-4">
+                <h2 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight mb-4">
                   About this project
                 </h2>
-                <p className="text-[15px] text-slate-500 leading-relaxed">
+                <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed">
                   A cross-institutional archive coordinating climate model
                   outputs, sensor datasets, and policy-facing research across
                   four partner labs. The project standardizes data intake and
@@ -272,18 +261,17 @@ export default function Projects() {
               </motion.div>
             )}
 
-            {/* Milestones */}
             {activeTab === "Overview" && (
               <motion.div
                 variants={itemVariants}
-                className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-8"
+                className="glass-panel rounded-[28px] p-8"
               >
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase">
+                    <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase">
                       Research Stages
                     </div>
-                    <h2 className="text-xl font-extrabold text-[#0f111a] tracking-tight">
+                    <h2 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
                       Milestones
                     </h2>
                   </div>
@@ -291,12 +279,12 @@ export default function Projects() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setActiveTab("Progress")}
-                    className="text-sm font-semibold text-indigo-500 hover:text-indigo-700 transition-colors"
+                    className="text-sm font-semibold text-indigo-500 hover:text-indigo-600 transition-colors"
                   >
                     View all
                   </motion.button>
                 </div>
-                <div className="divide-y divide-slate-200/60">
+                <div className="divide-y divide-[var(--border)]">
                   {milestones.map((m) => (
                     <motion.div
                       key={m.label}
@@ -313,32 +301,33 @@ export default function Projects() {
                           />
                         </span>
                       ) : (
-                        <span className="h-6 w-6 rounded-full border-2 border-slate-300 bg-white/60 shrink-0" />
+                        <span className="h-6 w-6 rounded-full border-2 border-[var(--border)] bg-[var(--bg-surface)] shrink-0" />
                       )}
                       <span
-                        className={`flex-1 text-base font-bold ${m.done ? "text-slate-400 line-through" : "text-[#0f111a]"}`}
+                        className={`flex-1 text-base font-bold ${m.done ? "text-[var(--text-muted)] line-through" : "text-[var(--text-primary)]"}`}
                       >
                         {m.label}
                       </span>
-                      <span className="text-sm text-slate-400">{m.date}</span>
+                      <span className="text-sm text-[var(--text-muted)]">
+                        {m.date}
+                      </span>
                     </motion.div>
                   ))}
                 </div>
               </motion.div>
             )}
 
-            {/* Open Tasks */}
             {(activeTab === "Overview" || activeTab === "Tasks") && (
               <motion.div
                 variants={itemVariants}
-                className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-8"
+                className="glass-panel rounded-[28px] p-8"
               >
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase">
+                    <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase">
                       Task Board
                     </div>
-                    <h2 className="text-xl font-extrabold text-[#0f111a] tracking-tight">
+                    <h2 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
                       Open Tasks
                     </h2>
                   </div>
@@ -346,7 +335,7 @@ export default function Projects() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setActiveTab("Tasks")}
-                    className="text-sm font-semibold text-indigo-500 hover:text-indigo-700 transition-colors"
+                    className="text-sm font-semibold text-indigo-500 hover:text-indigo-600 transition-colors"
                   >
                     View board
                   </motion.button>
@@ -356,16 +345,13 @@ export default function Projects() {
                     <motion.div
                       key={t.id}
                       variants={itemVariants}
-                      whileHover={{
-                        x: 6,
-                        backgroundColor: "rgba(255,255,255,0.5)",
-                      }}
-                      className="flex items-start gap-4 p-2 -mx-2 rounded-xl transition-colors cursor-pointer"
+                      whileHover={{ x: 6 }}
+                      className="flex items-start gap-4 p-2 -mx-2 rounded-xl transition-colors cursor-pointer hover:bg-[var(--bg-surface-elevated)]"
                       onClick={() => toggleTask(idx)}
                     >
                       <motion.span
                         whileTap={{ scale: 0.8 }}
-                        className={`mt-0.5 h-5 w-5 shrink-0 rounded-md flex items-center justify-center transition-colors ${taskStates[idx] ? "bg-linear-to-br from-indigo-400 to-violet-400 shadow-sm" : "border-2 border-slate-300 bg-white/60"}`}
+                        className={`mt-0.5 h-5 w-5 shrink-0 rounded-md flex items-center justify-center transition-colors ${taskStates[idx] ? "bg-linear-to-br from-indigo-400 to-violet-400 shadow-sm" : "border-2 border-[var(--border)] bg-[var(--bg-surface)]"}`}
                       >
                         {taskStates[idx] && (
                           <Check
@@ -377,11 +363,11 @@ export default function Projects() {
                       </motion.span>
                       <div className="flex-1 min-w-0">
                         <div
-                          className={`text-base font-bold leading-snug transition-all duration-300 ${taskStates[idx] ? "text-slate-400 line-through" : "text-[#0f111a]"}`}
+                          className={`text-base font-bold leading-snug transition-all duration-300 ${taskStates[idx] ? "text-[var(--text-muted)] line-through" : "text-[var(--text-primary)]"}`}
                         >
                           {t.title}
                         </div>
-                        <div className="text-xs text-slate-400 mt-1">
+                        <div className="text-xs text-[var(--text-muted)] mt-1">
                           {t.meta}
                         </div>
                       </div>
@@ -398,43 +384,37 @@ export default function Projects() {
             )}
           </div>
 
-          {/* Right column */}
           <div className="space-y-6">
-            {/* Members */}
             {(activeTab === "Overview" || activeTab === "Members") && (
               <motion.div
                 variants={itemVariants}
-                className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-6"
+                className="glass-panel rounded-[28px] p-6"
               >
                 <div className="flex items-start justify-between mb-5">
                   <div>
-                    <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase mb-1">
+                    <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-1">
                       Collaboration
                     </div>
-                    <h3 className="text-xl font-extrabold text-[#0f111a] tracking-tight">
+                    <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
                       Members
                     </h3>
                   </div>
-                  {/* ✅ FIXED: Invite button is now fully interactive */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleInvite}
-                    className="text-sm font-bold text-indigo-500 hover:text-indigo-700 transition-colors"
+                    className="text-sm font-bold text-indigo-500 hover:text-indigo-600 transition-colors"
                   >
                     Invite
                   </motion.button>
                 </div>
-                <div className="divide-y divide-slate-200/60">
+                <div className="divide-y divide-[var(--border)]">
                   {members.map((m) => (
                     <motion.div
                       key={m.name}
                       variants={itemVariants}
-                      whileHover={{
-                        x: 6,
-                        backgroundColor: "rgba(255,255,255,0.5)",
-                      }}
-                      className="flex items-center gap-3 py-4 first:pt-0 last:pb-0 -mx-2 px-2 rounded-xl transition-colors cursor-pointer"
+                      whileHover={{ x: 6 }}
+                      className="flex items-center gap-3 py-4 first:pt-0 last:pb-0 -mx-2 px-2 rounded-xl transition-colors cursor-pointer hover:bg-[var(--bg-surface-elevated)]"
                       onClick={() =>
                         console.log(`Viewing profile of ${m.name}`)
                       }
@@ -446,14 +426,16 @@ export default function Projects() {
                         {m.initials}
                       </motion.div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-[#0f111a]">
+                        <div className="text-sm font-bold text-[var(--text-primary)]">
                           {m.name}
                         </div>
-                        <div className="text-xs text-slate-400">{m.role}</div>
+                        <div className="text-xs text-[var(--text-muted)]">
+                          {m.role}
+                        </div>
                       </div>
                       <motion.span
                         whileHover={{ scale: 1.05 }}
-                        className={`shrink-0 text-xs font-bold px-3 py-1 rounded-full ${m.lead ? "text-indigo-600 bg-indigo-50" : "text-slate-500 bg-slate-100"}`}
+                        className={`shrink-0 text-xs font-bold px-3 py-1 rounded-full ${m.lead ? "text-[var(--badge-blue-text)] bg-[var(--badge-blue)]" : "text-[var(--muted-foreground)] bg-[var(--muted)]"}`}
                       >
                         {m.badge}
                       </motion.span>
@@ -463,41 +445,36 @@ export default function Projects() {
               </motion.div>
             )}
 
-            {/* Recent Files */}
             {(activeTab === "Overview" || activeTab === "Files") && (
               <motion.div
                 variants={itemVariants}
-                className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-6"
+                className="glass-panel rounded-[28px] p-6"
               >
                 <div className="flex items-start justify-between mb-5">
                   <div>
-                    <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase mb-1">
+                    <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-1">
                       Repository
                     </div>
-                    <h3 className="text-xl font-extrabold text-[#0f111a] tracking-tight">
+                    <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
                       Recent Files
                     </h3>
                   </div>
-                  {/* ✅ FIXED: View all button now correctly navigates to the Files tab */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setActiveTab("Files")}
-                    className="text-sm font-bold text-indigo-500 hover:text-indigo-700 transition-colors"
+                    className="text-sm font-bold text-indigo-500 hover:text-indigo-600 transition-colors"
                   >
                     View all
                   </motion.button>
                 </div>
-                <div className="divide-y divide-slate-200/60">
+                <div className="divide-y divide-[var(--border)]">
                   {files.map((f) => (
                     <motion.div
                       key={f.name}
                       variants={itemVariants}
-                      whileHover={{
-                        x: 6,
-                        backgroundColor: "rgba(255,255,255,0.5)",
-                      }}
-                      className="flex items-center gap-3 py-4 first:pt-0 last:pb-0 -mx-2 px-2 rounded-xl transition-colors cursor-pointer"
+                      whileHover={{ x: 6 }}
+                      className="flex items-center gap-3 py-4 first:pt-0 last:pb-0 -mx-2 px-2 rounded-xl transition-colors cursor-pointer hover:bg-[var(--bg-surface-elevated)]"
                       onClick={() => console.log(`Downloading ${f.name}`)}
                     >
                       <motion.div
@@ -506,10 +483,10 @@ export default function Projects() {
                       >
                         {f.type}
                       </motion.div>
-                      <div className="flex-1 min-w-0 text-sm font-bold text-[#0f111a] truncate group-hover:text-indigo-600 transition-colors">
+                      <div className="flex-1 min-w-0 text-sm font-bold text-[var(--text-primary)] truncate group-hover:text-indigo-500 transition-colors">
                         {f.name}
                       </div>
-                      <div className="shrink-0 text-xs text-slate-400 font-medium">
+                      <div className="shrink-0 text-xs text-[var(--text-muted)] font-medium">
                         {f.size}
                       </div>
                     </motion.div>

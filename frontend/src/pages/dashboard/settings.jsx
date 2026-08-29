@@ -280,7 +280,7 @@ export default function Settings() {
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-red-200/60 bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
+        <section className="rounded-[24px] border border-[var(--error)]/30 bg-[var(--bg-surface)] p-7 shadow-[var(--shadow-lg)] backdrop-blur-md">
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-red-500">
             Danger Zone
           </p>
@@ -301,7 +301,7 @@ export default function Settings() {
             <button
               type="button"
               onClick={() => setIsDeactivateModalOpen(true)}
-              className="h-10 rounded-xl border border-red-200/60 bg-red-50 px-5 text-sm font-bold text-red-500 transition-colors"
+              className="h-10 rounded-xl border border-[var(--error)]/30 bg-[var(--error-bg)] px-5 text-sm font-bold text-[var(--error)] transition-colors"
             >
               Deactivate
             </button>
@@ -340,19 +340,19 @@ export default function Settings() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
               transition={{ duration: 0.2 }}
-              className="relative w-full max-w-md rounded-[24px] bg-white/90 backdrop-blur-xl border border-white/80 p-8 shadow-2xl"
+              className="relative w-full max-w-md rounded-[24px] bg-[var(--bg-surface-elevated)] backdrop-blur-xl border border-[var(--border)] p-8 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setIsDeactivateModalOpen(false)}
-                className="absolute right-4 top-4 text-slate-400 hover:text-slate-800 transition-colors"
+                className="absolute right-4 top-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               >
                 <X size={20} />
               </button>
-              <h2 className="text-2xl font-extrabold text-[#1d2030]">
+              <h2 className="text-2xl font-extrabold text-[var(--text-primary)]">
                 Deactivate account?
               </h2>
-              <p className="mt-3 text-sm text-slate-500 leading-relaxed">
+              <p className="mt-3 text-sm text-[var(--text-secondary)] leading-relaxed">
                 You will lose access to your projects, papers, and collaboration
                 data. This action can be reversed by contacting your admin.
               </p>
@@ -360,7 +360,7 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setIsDeactivateModalOpen(false)}
-                  className="h-10 rounded-xl border border-slate-200/80 bg-white/65 px-6 text-sm font-bold text-slate-500 transition-colors"
+                  className="h-10 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] transition-colors"
                 >
                   Cancel
                 </button>
@@ -380,7 +380,7 @@ export default function Settings() {
       {notice && (
         <div
           role="status"
-          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[#151827] px-5 py-3 text-sm font-bold text-white shadow-2xl"
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[var(--bg-sidebar)] px-5 py-3 text-sm font-bold text-white shadow-2xl"
         >
           {notice}
         </div>
@@ -408,13 +408,11 @@ function ToggleRow({ label, description, checked, onChange }) {
         className={`relative h-7 w-12 rounded-full transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-100 ${
           checked
             ? "bg-gradient-to-r from-indigo-500 to-cyan-400"
-            : "bg-slate-200"
+            : "bg-[var(--muted)]"
         }`}
       >
         <span
-          className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-white shadow-md transition-transform ${
-            checked ? "right-1" : "left-1"
-          }`}
+          className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-white shadow-md transition-transform ${checked ? "right-1" : "left-1"}`}
         />
       </button>
     </div>
