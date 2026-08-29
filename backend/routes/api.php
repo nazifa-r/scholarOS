@@ -11,6 +11,9 @@ use App\Http\Controllers\Api\PaperController;
 use App\Http\Controllers\Api\ResearcherController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PaperSubmissionController;
+use App\Http\Controllers\Api\FileController;
+use App\Http\Controllers\Api\MilestoneController;
+use App\Http\Controllers\Api\TaskController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -321,6 +324,85 @@ Route::prefix('v1')->group(function () {
             
             // DELETE /api/v1/projects/{id}/members/{memberId} - Remove member
             Route::delete('/{id}/members/{memberId}', [ProjectController::class, 'removeMember']);
+        });
+    });
+
+    // ========================================================================
+    // PROJECT RESOURCES (Files, Milestones, Tasks)
+    // ========================================================================
+
+    Route::prefix('projects/{project}')->middleware('auth:sanctum')->group(function () {
+
+        // ------------------------------------------------------------
+        // PROJECT FILES
+        // ------------------------------------------------------------
+        
+        Route::prefix('files')->group(function () {
+            // GET /api/v1/projects/{project}/files - Get all files
+            Route::get('/', [FileController::class, 'index']);
+            
+            // POST /api/v1/projects/{project}/files - Upload file
+            Route::post('/', [FileController::class, 'store']);
+            
+            // GET /api/v1/projects/{project}/files/{file} - Get file details
+            Route::get('/{file}', [FileController::class, 'show']);
+            
+            // GET /api/v1/projects/{project}/files/{file}/download - Download file
+            Route::get('/{file}/download', [FileController::class, 'download']);
+            
+            // DELETE /api/v1/projects/{project}/files/{file} - Delete file
+            Route::delete('/{file}', [FileController::class, 'destroy']);
+        });
+
+        // ------------------------------------------------------------
+        // PROJECT MILESTONES
+        // ------------------------------------------------------------
+        
+        Route::prefix('milestones')->group(function () {
+            // GET /api/v1/projects/{project}/milestones - Get all milestones
+            Route::get('/', [MilestoneController::class, 'index']);
+            
+            // POST /api/v1/projects/{project}/milestones - Create milestone
+            Route::post('/', [MilestoneController::class, 'store']);
+            
+            // GET /api/v1/projects/{project}/milestones/{milestone} - Get single milestone
+            Route::get('/{milestone}', [MilestoneController::class, 'show']);
+            
+            // PUT /api/v1/projects/{project}/milestones/{milestone} - Update milestone
+            Route::put('/{milestone}', [MilestoneController::class, 'update']);
+            
+            // PATCH /api/v1/projects/{project}/milestones/{milestone}/status - Update milestone status
+            Route::patch('/{milestone}/status', [MilestoneController::class, 'updateStatus']);
+            
+            // DELETE /api/v1/projects/{project}/milestones/{milestone} - Delete milestone
+            Route::delete('/{milestone}', [MilestoneController::class, 'destroy']);
+        });
+
+        // ------------------------------------------------------------
+        // PROJECT TASKS
+        // ------------------------------------------------------------
+        
+        Route::prefix('tasks')->group(function () {
+            // GET /api/v1/projects/{project}/tasks - Get all tasks
+            Route::get('/', [TaskController::class, 'index']);
+            
+            // POST /api/v1/projects/{project}/tasks - Create task
+            Route::post('/', [TaskController::class, 'store']);
+            
+            // GET /api/v1/projects/{project}/tasks/{task} - Get single task
+            Route::get('/{task}', [TaskController::class, 'show']);
+            
+            // PUT /api/v1/projects/{project}/tasks/{task} - Update task
+            Route::put('/{task}', [TaskController::class, 'update']);
+            
+            // PATCH /api/v1/projects/{project}/tasks/{task}/status - Update task status
+            Route::patch('/{task}/status', [TaskController::class, 'updateStatus']);
+            
+            // POST /api/v1/projects/{project}/tasks/{task}/assign - Assign task
+            Route::post('/{task}/assign', [TaskController::class, 'assign']);
+            
+            // DELETE /api/v1/projects/{project}/tasks/{task} - Delete task
+            Route::delete('/{task}', [TaskController::class, 'destroy']);
         });
     });
 

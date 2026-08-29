@@ -67,16 +67,46 @@ class Project extends Model
         return $this->belongsToMany(User::class, 'project_members');
     }
 
+    // ============================================
+    // PROJECT RESOURCES RELATIONSHIPS
+    // ============================================
+
+    public function files()
+    {
+        return $this->hasMany(File::class);
+    }
+
+    public function milestones()
+    {
+        return $this->hasMany(Milestone::class)->orderBy('order');
+    }
+
     public function tasks()
     {
         return $this->hasMany(Task::class);
     }
 
-    // Commented out temporarily - File model doesn't exist yet
-    // public function files()
-    // {
-    //     return $this->hasMany(File::class);
-    // }
+    public function activeTasks()
+    {
+        return $this->hasMany(Task::class)->where('status', '!=', 'completed');
+    }
+
+    public function completedTasks()
+    {
+        return $this->hasMany(Task::class)->where('status', 'completed');
+    }
+
+    public function upcomingMilestones()
+    {
+        return $this->hasMany(Milestone::class)->where('due_date', '>=', now())
+                      ->where('status', '!=', 'completed');
+    }
+
+    public function overdueMilestones()
+    {
+        return $this->hasMany(Milestone::class)->where('due_date', '<', now())
+                      ->where('status', '!=', 'completed');
+    }
 
     public function comments()
     {
@@ -127,6 +157,39 @@ class Project extends Model
     public function getProgressAttribute(): int
     {
         return $this->progress_pct;
+    }
+
+    public function getMilestoneProgressAttribute(): int
+    {
+        $total = $this->milestones()->count();
+        if ($total === 0) return 0;
+        
+        $completed = $this->milestones()->where('status', 'completed')->count();
+        return round(($completed / $total) * 100);
+    }
+
+    public function getTaskProgressAttribute(): int
+    {
+        $total = $this->tasks()->count();
+        if ($total === 0) return 0;
+        
+        $completed = $this->tasks()->where('status', 'completed')->count();
+        return round(($completed / $total) * 100);
+    }
+
+    public function getFileCountAttribute(): int
+    {
+        return $this->files()->count();
+    }
+
+    public function getMilestoneCountAttribute(): int
+    {
+        return $this->milestones()->count();
+    }
+
+    public function getCompletedMilestoneCountAttribute(): int
+    {
+        return $this->milestones()->where('status', 'completed')->count();
     }
 
     // ============================================
