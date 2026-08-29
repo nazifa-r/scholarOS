@@ -832,10 +832,6 @@ export default function VerificationDashboard() {
           Role Verification
         </div>
 
-        <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
-          Verification Requests
-        </h2>
-
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
           Review and manage Student and Faculty/Supervisor role verification
           requests submitted by users.
