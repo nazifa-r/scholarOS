@@ -126,6 +126,13 @@ export default function Projects() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [taskStates, setTaskStates] = useState(openTasks.map((t) => t.done));
 
+  const leftHasContent = activeTab === "Overview" || activeTab === "Tasks";
+  const rightHasContent =
+    activeTab === "Overview" ||
+    activeTab === "Members" ||
+    activeTab === "Files";
+  const rightOnly = rightHasContent && !leftHasContent;
+
   const toggleTask = (index) => {
     const newState = [...taskStates];
     newState[index] = !newState[index];
@@ -216,16 +223,16 @@ export default function Projects() {
             onClick={() => setActiveTab(tab)}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.95 }}
-            className={`relative px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeTab === tab ? "text-white" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+            className={`relative z-0 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeTab === tab ? "text-white" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
           >
             {activeTab === tab && (
               <motion.div
                 layoutId="activeTabBackground"
-                className="absolute inset-0 rounded-xl bg-linear-to-r from-indigo-500 to-violet-500 shadow-md shadow-indigo-400/30 -z-10"
+                className="absolute inset-0 rounded-xl bg-linear-to-r from-indigo-500 to-violet-500 shadow-md shadow-indigo-400/30 z-0"
                 transition={{ type: "spring", duration: 0.5 }}
               />
             )}
-            {tab}
+            <span className="relative z-10">{tab}</span>
           </motion.button>
         ))}
       </motion.div>
@@ -237,7 +244,7 @@ export default function Projects() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}
-          className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start"
+          className={`grid grid-cols-1 ${leftHasContent && rightHasContent ? "lg:grid-cols-[1fr_380px]" : ""} gap-6 items-start`}
         >
           <div className="space-y-6">
             {activeTab === "Overview" && (
@@ -384,7 +391,7 @@ export default function Projects() {
             )}
           </div>
 
-          <div className="space-y-6">
+          <div className={`space-y-6 ${rightOnly ? "max-w-xl" : ""}`}>
             {(activeTab === "Overview" || activeTab === "Members") && (
               <motion.div
                 variants={itemVariants}

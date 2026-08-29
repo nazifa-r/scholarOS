@@ -123,22 +123,24 @@ export default function UploadPaper() {
 
   return (
     <motion.div initial="hidden" animate="visible" variants={containerVariants} className="space-y-6 pb-8 w-full min-w-0 relative">
-      <motion.div variants={itemVariants} className="flex items-end justify-between w-full gap-8">
+      {/* Responsive Header */}
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 w-full">
         <div>
           <div className="mb-1 text-xs font-medium text-[var(--text-muted)]">Every paper starts here</div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Add Your Work to the Record</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Add Your Work to the Record</h1>
         </div>
-        <motion.button type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }} onClick={saveDraft} className="h-11 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]">
+        <motion.button type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }} onClick={saveDraft} className="h-11 w-full sm:w-auto rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]">
           Save as Draft
         </motion.button>
       </motion.div>
 
-      <div className="mt-6 grid grid-cols-[minmax(0,1fr)_380px] items-start gap-5">
+      {/* Responsive Main Grid */}
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] items-start gap-5">
         <div className="space-y-5">
-          <motion.section variants={itemVariants} whileHover={{ y: -4, boxShadow: "0 24px 80px rgba(15,23,42,0.08)" }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[0_16px_36px_rgba(35,42,83,0.07)] backdrop-blur-md">
+          <motion.section variants={itemVariants} whileHover={{ y: -4, boxShadow: "0 24px 80px rgba(15,23,42,0.08)" }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] p-5 sm:p-7 shadow-[0_16px_36px_rgba(35,42,83,0.07)] backdrop-blur-md">
             <p className="text-base text-[var(--text-primary)]">Manuscript</p>
             <h2 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">Upload File</h2>
-            <motion.div animate={{ scale: isDragging ? 1.02 : 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} onDragEnter={(event) => { event.preventDefault(); setIsDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()} className={`mt-1 cursor-pointer rounded-[20px] border-2 border-dashed px-6 py-10 text-center transition ${isDragging ? "border-indigo-400 bg-indigo-50/80" : "border-violet-300/80 bg-linear-to-br from-violet-50/45 to-cyan-50/45 hover:border-indigo-400"}`}>
+            <motion.div animate={{ scale: isDragging ? 1.02 : 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} onDragEnter={(event) => { event.preventDefault(); setIsDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()} className={`mt-1 cursor-pointer rounded-[20px] border-2 border-dashed px-4 sm:px-6 py-8 sm:py-10 text-center transition ${isDragging ? "border-indigo-400 bg-indigo-50/80" : "border-violet-300/80 bg-linear-to-br from-violet-50/45 to-cyan-50/45 hover:border-indigo-400"}`}>
               <input ref={fileInputRef} type="file" accept="application/pdf,.pdf" className="hidden" onChange={(event) => useFile(event.target.files?.[0])} />
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-indigo-500 to-cyan-400 text-white shadow-xl shadow-indigo-300/35">
                 <Upload size={22} />
@@ -161,7 +163,7 @@ export default function UploadPaper() {
             </div>
           </motion.section>
 
-          <motion.section variants={itemVariants} whileHover={{ y: -4, boxShadow: "0 24px 80px rgba(15,23,42,0.08)" }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] p-7 shadow-[0_16px_36px_rgba(35,42,83,0.07)] backdrop-blur-md">
+          <motion.section variants={itemVariants} whileHover={{ y: -4, boxShadow: "0 24px 80px rgba(15,23,42,0.08)" }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] p-5 sm:p-7 shadow-[0_16px_36px_rgba(35,42,83,0.07)] backdrop-blur-md">
             <p className="text-base text-[var(--text-primary)]">Details</p>
             <h2 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">Paper Information</h2>
             <label className="mt-4 block">
@@ -189,7 +191,7 @@ export default function UploadPaper() {
                 <input value={keywordInput} onChange={(event) => setKeywordInput(event.target.value)} onKeyDown={handleKeywordKeyDown} onBlur={addKeyword} placeholder="Add keyword…" className="min-w-32 flex-1 bg-transparent px-1 py-1.5 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]" />
               </div>
             </div>
-            <div className="mt-5 grid grid-cols-2 gap-5">
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
               <SelectField label="Research Area" value={researchArea} options={["Environmental AI", "Health Informatics", "Research Systems", "Cybersecurity"]} onChange={(v) => { setResearchArea(v); setAreaConfirmed(true); }} />
               <SelectField label="Category" value={category} options={["Peer Review", "Ready to Publish", "Draft", "In Revision"]} onChange={setCategory} />
               <SelectField label="Publication Year" value={publicationYear} options={["2026", "2025", "2024", "2023"]} onChange={setPublicationYear} />
@@ -215,14 +217,14 @@ export default function UploadPaper() {
             </div>
           </motion.section>
 
-          <motion.div variants={itemVariants} className="flex justify-end gap-3">
-            <motion.button type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }} onClick={() => navigate("/dashboard/papers")} className="h-11 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]">
+          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row justify-end gap-3">
+            <motion.button type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }} onClick={() => navigate("/dashboard/papers")} className="h-11 w-full sm:w-auto rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]">
               Cancel
             </motion.button>
-            <motion.button type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }} onClick={saveDraft} className="h-11 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]">
+            <motion.button type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }} onClick={saveDraft} className="h-11 w-full sm:w-auto rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]">
               Save as Draft
             </motion.button>
-            <motion.button type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }} onClick={submitForApproval} className="h-11 rounded-xl bg-linear-to-r from-violet-500 via-indigo-500 to-cyan-400 px-7 text-sm font-bold text-white shadow-lg shadow-indigo-300/35 transition hover:-translate-y-0.5 hover:shadow-xl">
+            <motion.button type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }} onClick={submitForApproval} className="h-11 w-full sm:w-auto rounded-xl bg-linear-to-r from-violet-500 via-indigo-500 to-cyan-400 px-7 text-sm font-bold text-white shadow-lg shadow-indigo-300/35 transition hover:-translate-y-0.5 hover:shadow-xl">
               Submit for Approval
             </motion.button>
           </motion.div>
@@ -254,7 +256,7 @@ export default function UploadPaper() {
 
       <AnimatePresence>
         {notice && (
-          <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} transition={{ duration: 0.2 }} role="status" className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[var(--bg-sidebar)] px-5 py-3 text-sm font-bold text-white shadow-2xl">
+          <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} transition={{ duration: 0.2 }} role="status" className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 w-[90vw] max-w-sm rounded-xl bg-[var(--bg-sidebar)] px-5 py-3 text-sm font-bold text-white shadow-2xl text-center">
             {notice}
           </motion.div>
         )}

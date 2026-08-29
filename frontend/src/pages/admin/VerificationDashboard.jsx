@@ -20,9 +20,21 @@ import {
 import { apiRequest } from "../../utils/api.js";
 
 const statusConfig = {
-  Pending: { icon: Clock3, className: "bg-amber-50 text-amber-700 border-amber-200" },
-  Approved: { icon: CheckCircle2, className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  Rejected: { icon: XCircle, className: "bg-rose-50 text-rose-700 border-rose-200" },
+  Pending: {
+    icon: Clock3,
+    className:
+      "bg-[var(--warning-bg)] text-[var(--warning)] border-[var(--warning)]/30",
+  },
+  Approved: {
+    icon: CheckCircle2,
+    className:
+      "bg-[var(--success-bg)] text-[var(--success)] border-[var(--success)]/30",
+  },
+  Rejected: {
+    icon: XCircle,
+    className:
+      "bg-[var(--error-bg)] text-[var(--error)] border-[var(--error)]/30",
+  },
 };
 
 function StatusBadge({ status }) {
@@ -50,7 +62,7 @@ function SummaryCard({ label, value, icon: Icon }) {
             {value}
           </p>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--badge-blue)] text-[var(--badge-blue-text)]">
           <Icon size={18} />
         </div>
       </div>
@@ -63,7 +75,9 @@ function DetailItem({ icon: Icon, label, value }) {
     <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-page)] p-3">
       <div className="flex items-center gap-2 text-[var(--text-muted)]">
         <Icon size={14} />
-        <span className="text-[9px] font-bold uppercase tracking-[0.12em]">{label}</span>
+        <span className="text-[9px] font-bold uppercase tracking-[0.12em]">
+          {label}
+        </span>
       </div>
       <p className="mt-1.5 break-words text-sm font-semibold text-[var(--text-primary)]">
         {value || "—"}
@@ -86,7 +100,8 @@ function formatDate(dateString) {
 function formatRole(role) {
   if (!role) return "—";
   const normalized = role.toLowerCase();
-  if (normalized === "faculty" || normalized === "supervisor") return "Faculty/Supervisor";
+  if (normalized === "faculty" || normalized === "supervisor")
+    return "Faculty/Supervisor";
   if (normalized === "student") return "Student";
   return role;
 }
@@ -112,7 +127,8 @@ function normalizeVerification(request) {
     rejectionReason: request.rejection_reason || null,
     reviewedAt: formatDate(request.reviewed_at),
     idCardPath: request.id_card?.path || request.id_card_path || null,
-    idCardAvailable: request.id_card?.available ?? Boolean(request.id_card_path),
+    idCardAvailable:
+      request.id_card?.available ?? Boolean(request.id_card_path),
   };
 }
 
@@ -141,7 +157,9 @@ export default function VerificationDashboard() {
       setVerificationRequests(requests.map(normalizeVerification));
     } catch (err) {
       console.error("Failed to load verification requests:", err);
-      const message = err?.data?.message || "Unable to load verification requests. Please try again.";
+      const message =
+        err?.data?.message ||
+        "Unable to load verification requests. Please try again.";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -153,15 +171,25 @@ export default function VerificationDashboard() {
   }, []);
 
   const totalRequests = verificationRequests.length;
-  const pendingRequests = verificationRequests.filter((request) => request.status === "Pending").length;
-  const approvedRequests = verificationRequests.filter((request) => request.status === "Approved").length;
-  const rejectedRequests = verificationRequests.filter((request) => request.status === "Rejected").length;
+  const pendingRequests = verificationRequests.filter(
+    (request) => request.status === "Pending",
+  ).length;
+  const approvedRequests = verificationRequests.filter(
+    (request) => request.status === "Approved",
+  ).length;
+  const rejectedRequests = verificationRequests.filter(
+    (request) => request.status === "Rejected",
+  ).length;
 
   const filteredRequests = useMemo(() => {
     return verificationRequests.filter((request) => {
       const query = searchQuery.trim().toLowerCase();
-      const matchesSearch = !query || request.name.toLowerCase().includes(query) || request.email.toLowerCase().includes(query);
-      const matchesStatus = statusFilter === "All" || request.status === statusFilter;
+      const matchesSearch =
+        !query ||
+        request.name.toLowerCase().includes(query) ||
+        request.email.toLowerCase().includes(query);
+      const matchesStatus =
+        statusFilter === "All" || request.status === statusFilter;
       const matchesRole = roleFilter === "All" || request.role === roleFilter;
       return matchesSearch && matchesStatus && matchesRole;
     });
@@ -184,14 +212,17 @@ export default function VerificationDashboard() {
             Accept: "image/*,application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-        }
+        },
       );
       if (!response.ok) throw { status: response.status, data: {} };
       const blob = await response.blob();
       setIdCardUrl(URL.createObjectURL(blob));
     } catch (err) {
       console.error("Failed to load ID card:", err);
-      setActionError(err?.data?.message || "Unable to load the university ID card. Please try again.");
+      setActionError(
+        err?.data?.message ||
+          "Unable to load the university ID card. Please try again.",
+      );
     }
   };
 
@@ -203,7 +234,9 @@ export default function VerificationDashboard() {
     setActionError("");
     setIsLoadingDetails(true);
     try {
-      const response = await apiRequest(`/v1/admin/verifications/${request.id}`);
+      const response = await apiRequest(
+        `/v1/admin/verifications/${request.id}`,
+      );
       if (response?.data) {
         const details = normalizeVerification(response.data);
         setSelectedRequest(details);
@@ -211,7 +244,10 @@ export default function VerificationDashboard() {
       }
     } catch (err) {
       console.error("Failed to load verification details:", err);
-      setActionError(err?.data?.message || "Unable to load the verification details. Please try again.");
+      setActionError(
+        err?.data?.message ||
+          "Unable to load the verification details. Please try again.",
+      );
       if (request.idCardAvailable) await loadIdCard(request.id);
     } finally {
       setIsLoadingDetails(false);
@@ -232,26 +268,34 @@ export default function VerificationDashboard() {
     setIsProcessing(true);
     setActionError("");
     try {
-      const response = await apiRequest(`/v1/admin/verifications/${selectedRequest.id}/approve`, {
-        method: "POST",
-      });
+      const response = await apiRequest(
+        `/v1/admin/verifications/${selectedRequest.id}/approve`,
+        { method: "POST" },
+      );
       if (response?.data) {
         const updatedRequest = normalizeVerification(response.data);
         setSelectedRequest(updatedRequest);
         setVerificationRequests((current) =>
-          current.map((request) => (request.id === updatedRequest.id ? updatedRequest : request))
+          current.map((request) =>
+            request.id === updatedRequest.id ? updatedRequest : request,
+          ),
         );
       } else {
         await loadVerificationRequests();
         setSelectedRequest((current) =>
-          current ? { ...current, status: "Approved", rejectionReason: null } : current
+          current
+            ? { ...current, status: "Approved", rejectionReason: null }
+            : current,
         );
       }
       setShowRejectForm(false);
       setRejectionReason("");
     } catch (err) {
       console.error("Failed to approve verification:", err);
-      setActionError(err?.data?.message || "Unable to approve this verification request. Please try again.");
+      setActionError(
+        err?.data?.message ||
+          "Unable to approve this verification request. Please try again.",
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -267,27 +311,37 @@ export default function VerificationDashboard() {
     setIsProcessing(true);
     setActionError("");
     try {
-      const response = await apiRequest(`/v1/admin/verifications/${selectedRequest.id}/reject`, {
-        method: "POST",
-        body: JSON.stringify({ rejection_reason: trimmedReason }),
-      });
+      const response = await apiRequest(
+        `/v1/admin/verifications/${selectedRequest.id}/reject`,
+        {
+          method: "POST",
+          body: JSON.stringify({ rejection_reason: trimmedReason }),
+        },
+      );
       if (response?.data) {
         const updatedRequest = normalizeVerification(response.data);
         setSelectedRequest(updatedRequest);
         setVerificationRequests((current) =>
-          current.map((request) => (request.id === updatedRequest.id ? updatedRequest : request))
+          current.map((request) =>
+            request.id === updatedRequest.id ? updatedRequest : request,
+          ),
         );
       } else {
         await loadVerificationRequests();
         setSelectedRequest((current) =>
-          current ? { ...current, status: "Rejected", rejectionReason: trimmedReason } : current
+          current
+            ? { ...current, status: "Rejected", rejectionReason: trimmedReason }
+            : current,
         );
       }
       setShowRejectForm(false);
       setRejectionReason("");
     } catch (err) {
       console.error("Failed to reject verification:", err);
-      setActionError(err?.data?.message || "Unable to reject this verification request. Please try again.");
+      setActionError(
+        err?.data?.message ||
+          "Unable to reject this verification request. Please try again.",
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -320,21 +374,24 @@ export default function VerificationDashboard() {
               {selectedRequest.name}
             </h2>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Review the submitted university ID card and verification information.
+              Review the submitted university ID card and verification
+              information.
             </p>
           </div>
           <StatusBadge status={selectedRequest.status} />
         </div>
 
         {isLoadingDetails && (
-          <div className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
-            <Loader2 size={16} className="animate-spin" /> Loading verification details...
+          <div className="flex items-center gap-2 rounded-xl border border-[var(--badge-blue-text)]/30 bg-[var(--badge-blue)] px-4 py-3 text-sm text-[var(--badge-blue-text)]">
+            <Loader2 size={16} className="animate-spin" /> Loading verification
+            details...
           </div>
         )}
 
         {actionError && (
-          <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            <AlertCircle size={17} className="mt-0.5 shrink-0" /> <span>{actionError}</span>
+          <div className="flex items-start gap-2 rounded-xl border border-[var(--error)]/30 bg-[var(--error-bg)] px-4 py-3 text-sm text-[var(--error)]">
+            <AlertCircle size={17} className="mt-0.5 shrink-0" />{" "}
+            <span>{actionError}</span>
           </div>
         )}
 
@@ -342,22 +399,31 @@ export default function VerificationDashboard() {
           <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-sm sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-sm font-extrabold text-[var(--text-primary)]">University ID Card</h3>
-                <p className="mt-1 text-xs text-[var(--text-muted)]">Review the uploaded identification document.</p>
+                <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
+                  University ID Card
+                </h3>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  Review the uploaded identification document.
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsImageExpanded(true)}
                 disabled={!idCardUrl}
-                className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--badge-blue-text)]/30 hover:bg-[var(--badge-blue)] hover:text-[var(--badge-blue-text)] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <Maximize2 size={14} /> <span className="hidden sm:inline">Expand</span>
+                <Maximize2 size={14} />{" "}
+                <span className="hidden sm:inline">Expand</span>
               </button>
             </div>
 
             <div className="mt-5 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-page)]">
               {idCardUrl ? (
-                <button type="button" onClick={() => setIsImageExpanded(true)} className="group block w-full cursor-zoom-in">
+                <button
+                  type="button"
+                  onClick={() => setIsImageExpanded(true)}
+                  className="group block w-full cursor-zoom-in"
+                >
                   <img
                     src={idCardUrl}
                     alt={`${selectedRequest.name} university ID card`}
@@ -368,17 +434,25 @@ export default function VerificationDashboard() {
                 <div className="flex min-h-[300px] flex-col items-center justify-center px-6 text-center">
                   {isLoadingDetails ? (
                     <>
-                      <Loader2 size={24} className="animate-spin text-indigo-600" />
-                      <p className="mt-3 text-sm font-semibold text-[var(--text-primary)]">Loading ID card...</p>
+                      <Loader2
+                        size={24}
+                        className="animate-spin text-indigo-600"
+                      />
+                      <p className="mt-3 text-sm font-semibold text-[var(--text-primary)]">
+                        Loading ID card...
+                      </p>
                     </>
                   ) : (
                     <>
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--bg-page)] text-[var(--text-muted)]">
                         <AlertCircle size={20} />
                       </div>
-                      <p className="mt-3 text-sm font-semibold text-[var(--text-primary)]">ID card unavailable</p>
+                      <p className="mt-3 text-sm font-semibold text-[var(--text-primary)]">
+                        ID card unavailable
+                      </p>
                       <p className="mt-1 max-w-sm text-xs text-[var(--text-muted)]">
-                        The uploaded identification document could not be loaded.
+                        The uploaded identification document could not be
+                        loaded.
                       </p>
                     </>
                   )}
@@ -387,46 +461,83 @@ export default function VerificationDashboard() {
             </div>
 
             <p className="mt-3 text-center text-[10px] text-[var(--text-muted)]">
-              {idCardUrl ? "Click the image or Expand to view the ID card." : "No ID card preview is currently available."}
+              {idCardUrl
+                ? "Click the image or Expand to view the ID card."
+                : "No ID card preview is currently available."}
             </p>
           </section>
 
           <aside className="space-y-4">
             <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-sm">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--badge-blue)] text-[var(--badge-blue-text)]">
                   <UserRound size={15} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-[var(--text-primary)]">User Information</h3>
-                  <p className="text-[10px] text-[var(--text-muted)]">Submitted account details</p>
+                  <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
+                    User Information
+                  </h3>
+                  <p className="text-[10px] text-[var(--text-muted)]">
+                    Submitted account details
+                  </p>
                 </div>
               </div>
               <div className="mt-4 space-y-3">
-                <DetailItem icon={UserRound} label="Name" value={selectedRequest.name} />
-                <DetailItem icon={Mail} label="Email" value={selectedRequest.email} />
-                <DetailItem icon={GraduationCap} label="Role" value={selectedRequest.role} />
-                <DetailItem icon={CalendarDays} label="Submitted" value={selectedRequest.submittedAt} />
-                <DetailItem icon={ShieldCheck} label="Status" value={selectedRequest.status} />
+                <DetailItem
+                  icon={UserRound}
+                  label="Name"
+                  value={selectedRequest.name}
+                />
+                <DetailItem
+                  icon={Mail}
+                  label="Email"
+                  value={selectedRequest.email}
+                />
+                <DetailItem
+                  icon={GraduationCap}
+                  label="Role"
+                  value={selectedRequest.role}
+                />
+                <DetailItem
+                  icon={CalendarDays}
+                  label="Submitted"
+                  value={selectedRequest.submittedAt}
+                />
+                <DetailItem
+                  icon={ShieldCheck}
+                  label="Status"
+                  value={selectedRequest.status}
+                />
                 {selectedRequest.reviewedAt !== "—" && (
-                  <DetailItem icon={CalendarDays} label="Reviewed" value={selectedRequest.reviewedAt} />
+                  <DetailItem
+                    icon={CalendarDays}
+                    label="Reviewed"
+                    value={selectedRequest.reviewedAt}
+                  />
                 )}
               </div>
             </section>
 
-            {selectedRequest.status === "Rejected" && selectedRequest.rejectionReason && (
-              <section className="rounded-2xl border border-rose-200 bg-rose-50 p-5">
-                <div className="flex items-center gap-2 text-rose-700">
-                  <XCircle size={16} />
-                  <h3 className="text-sm font-extrabold">Rejection Reason</h3>
-                </div>
-                <p className="mt-2 text-xs leading-5 text-rose-700/80">{selectedRequest.rejectionReason}</p>
-              </section>
-            )}
+            {selectedRequest.status === "Rejected" &&
+              selectedRequest.rejectionReason && (
+                <section className="rounded-2xl border border-[var(--error)]/30 bg-[var(--error-bg)] p-5">
+                  <div className="flex items-center gap-2 text-[var(--error)]">
+                    <XCircle size={16} />
+                    <h3 className="text-sm font-extrabold">Rejection Reason</h3>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-[var(--error)]">
+                    {selectedRequest.rejectionReason}
+                  </p>
+                </section>
+              )}
 
             <section className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-sm">
-              <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Verification Actions</h3>
-              <p className="mt-1 text-xs text-[var(--text-muted)]">Review the request before taking an action.</p>
+              <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
+                Verification Actions
+              </h3>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
+                Review the request before taking an action.
+              </p>
 
               {selectedRequest.status === "Pending" ? (
                 <>
@@ -437,7 +548,11 @@ export default function VerificationDashboard() {
                       disabled={isProcessing}
                       className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {isProcessing ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                      {isProcessing ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={15} />
+                      )}
                       {isProcessing ? "Processing..." : "Approve"}
                     </button>
                     <button
@@ -447,25 +562,30 @@ export default function VerificationDashboard() {
                         setActionError("");
                       }}
                       disabled={isProcessing}
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[var(--error)]/30 bg-[var(--error-bg)] px-4 text-xs font-bold text-[var(--error)] transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <XCircle size={15} /> Reject
                     </button>
                   </div>
 
                   {showRejectForm && (
-                    <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50/60 p-4">
-                      <label htmlFor="rejection-reason" className="text-xs font-bold text-rose-800">
+                    <div className="mt-4 rounded-xl border border-[var(--error)]/30 bg-[var(--error-bg)] p-4">
+                      <label
+                        htmlFor="rejection-reason"
+                        className="text-xs font-bold text-[var(--error)]"
+                      >
                         Rejection Reason
                       </label>
                       <textarea
                         id="rejection-reason"
                         value={rejectionReason}
-                        onChange={(event) => setRejectionReason(event.target.value)}
+                        onChange={(event) =>
+                          setRejectionReason(event.target.value)
+                        }
                         placeholder="Explain why this verification request is being rejected..."
                         rows={4}
                         disabled={isProcessing}
-                        className="mt-2 w-full resize-none rounded-xl border border-rose-200 bg-[var(--bg-surface-elevated)] px-3 py-2.5 text-xs text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-rose-300 focus:ring-2 focus:ring-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="mt-2 w-full resize-none rounded-xl border border-[var(--error)]/30 bg-[var(--bg-surface-elevated)] px-3 py-2.5 text-xs text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--error)] focus:ring-2 focus:ring-[var(--error)]/20 disabled:cursor-not-allowed disabled:opacity-60"
                       />
                       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
                         <button
@@ -486,7 +606,9 @@ export default function VerificationDashboard() {
                           disabled={isProcessing || !rejectionReason.trim()}
                           className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {isProcessing && <Loader2 size={14} className="animate-spin" />}
+                          {isProcessing && (
+                            <Loader2 size={14} className="animate-spin" />
+                          )}
                           Confirm Rejection
                         </button>
                       </div>
@@ -495,7 +617,8 @@ export default function VerificationDashboard() {
                 </>
               ) : (
                 <p className="mt-4 rounded-xl bg-[var(--bg-page)] p-3 text-[10px] leading-4 text-[var(--text-muted)]">
-                  This request has already been reviewed. Verification actions are unavailable.
+                  This request has already been reviewed. Verification actions
+                  are unavailable.
                 </p>
               )}
             </section>
@@ -542,20 +665,21 @@ export default function VerificationDashboard() {
           Verification Requests
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-          Review and manage Student and Faculty/Supervisor role verification requests submitted by users.
+          Review and manage Student and Faculty/Supervisor role verification
+          requests submitted by users.
         </p>
       </div>
 
       {error && (
-        <div className="flex items-start justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
-          <div className="flex items-start gap-2 text-sm text-rose-700">
+        <div className="flex items-start justify-between gap-4 rounded-xl border border-[var(--error)]/30 bg-[var(--error-bg)] px-4 py-3">
+          <div className="flex items-start gap-2 text-sm text-[var(--error)]">
             <AlertCircle size={17} className="mt-0.5 shrink-0" />
             <span>{error}</span>
           </div>
           <button
             type="button"
             onClick={loadVerificationRequests}
-            className="shrink-0 text-xs font-bold text-rose-700 underline underline-offset-2 hover:text-rose-900"
+            className="shrink-0 text-xs font-bold text-[var(--error)] underline underline-offset-2 hover:opacity-80"
           >
             Retry
           </button>
@@ -563,16 +687,35 @@ export default function VerificationDashboard() {
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <SummaryCard label="Total Requests" value={isLoading ? "—" : totalRequests} icon={ShieldCheck} />
-        <SummaryCard label="Pending" value={isLoading ? "—" : pendingRequests} icon={Clock3} />
-        <SummaryCard label="Approved" value={isLoading ? "—" : approvedRequests} icon={CheckCircle2} />
-        <SummaryCard label="Rejected" value={isLoading ? "—" : rejectedRequests} icon={XCircle} />
+        <SummaryCard
+          label="Total Requests"
+          value={isLoading ? "—" : totalRequests}
+          icon={ShieldCheck}
+        />
+        <SummaryCard
+          label="Pending"
+          value={isLoading ? "—" : pendingRequests}
+          icon={Clock3}
+        />
+        <SummaryCard
+          label="Approved"
+          value={isLoading ? "—" : approvedRequests}
+          icon={CheckCircle2}
+        />
+        <SummaryCard
+          label="Rejected"
+          value={isLoading ? "—" : rejectedRequests}
+          icon={XCircle}
+        />
       </div>
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4 shadow-sm">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="relative w-full xl:max-w-md">
-            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+            />
             <input
               type="text"
               value={searchQuery}
@@ -583,7 +726,10 @@ export default function VerificationDashboard() {
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative">
-              <SlidersHorizontal size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+              <SlidersHorizontal
+                size={14}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+              />
               <select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
@@ -594,7 +740,10 @@ export default function VerificationDashboard() {
                 <option value="Approved">Approved</option>
                 <option value="Rejected">Rejected</option>
               </select>
-              <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+              <ChevronDown
+                size={14}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+              />
             </div>
             <div className="relative">
               <select
@@ -606,7 +755,10 @@ export default function VerificationDashboard() {
                 <option value="Student">Student</option>
                 <option value="Faculty/Supervisor">Faculty/Supervisor</option>
               </select>
-              <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+              <ChevronDown
+                size={14}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+              />
             </div>
           </div>
         </div>
@@ -616,8 +768,12 @@ export default function VerificationDashboard() {
         {isLoading ? (
           <div className="flex min-h-[320px] flex-col items-center justify-center px-6 text-center">
             <Loader2 size={28} className="animate-spin text-indigo-600" />
-            <h3 className="mt-4 text-sm font-bold text-[var(--text-primary)]">Loading verification requests...</h3>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">Retrieving the latest requests from the server.</p>
+            <h3 className="mt-4 text-sm font-bold text-[var(--text-primary)]">
+              Loading verification requests...
+            </h3>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              Retrieving the latest requests from the server.
+            </p>
           </div>
         ) : (
           <>
@@ -626,32 +782,58 @@ export default function VerificationDashboard() {
               <table className="w-full min-w-[800px]">
                 <thead>
                   <tr className="border-b border-[var(--border)] bg-[var(--bg-page)]/70">
-                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">User</th>
-                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">Role</th>
-                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">Submitted</th>
-                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">Status</th>
-                    <th className="px-5 py-3 text-right text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">Action</th>
+                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      User
+                    </th>
+                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      Role
+                    </th>
+                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      Submitted
+                    </th>
+                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      Status
+                    </th>
+                    <th className="px-5 py-3 text-right text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRequests.map((request) => (
-                    <tr key={request.id} className="border-b border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--bg-page)]/60">
+                    <tr
+                      key={request.id}
+                      className="border-b border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--bg-page)]/60"
+                    >
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xs font-extrabold text-indigo-600">
-                            {request.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--badge-blue)] text-xs font-extrabold text-[var(--badge-blue-text)]">
+                            {request.name
+                              .split(" ")
+                              .map((part) => part[0])
+                              .join("")
+                              .slice(0, 2)
+                              .toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-bold text-[var(--text-primary)]">{request.name}</p>
-                            <p className="truncate text-xs text-[var(--text-muted)]">{request.email}</p>
+                            <p className="truncate text-sm font-bold text-[var(--text-primary)]">
+                              {request.name}
+                            </p>
+                            <p className="truncate text-xs text-[var(--text-muted)]">
+                              {request.email}
+                            </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="text-sm font-medium text-[var(--text-secondary)]">{request.role}</span>
+                        <span className="text-sm font-medium text-[var(--text-secondary)]">
+                          {request.role}
+                        </span>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="text-sm text-[var(--text-secondary)]">{request.submittedAt}</span>
+                        <span className="text-sm text-[var(--text-secondary)]">
+                          {request.submittedAt}
+                        </span>
                       </td>
                       <td className="px-5 py-4">
                         <StatusBadge status={request.status} />
@@ -660,7 +842,7 @@ export default function VerificationDashboard() {
                         <button
                           type="button"
                           onClick={() => handleViewRequest(request)}
-                          className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                          className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--badge-blue-text)]/30 hover:bg-[var(--badge-blue)] hover:text-[var(--badge-blue-text)]"
                         >
                           <Eye size={14} /> View
                         </button>
@@ -677,30 +859,47 @@ export default function VerificationDashboard() {
                 <div key={request.id} className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xs font-extrabold text-indigo-600">
-                        {request.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--badge-blue)] text-xs font-extrabold text-[var(--badge-blue-text)]">
+                        {request.name
+                          .split(" ")
+                          .map((part) => part[0])
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-[var(--text-primary)]">{request.name}</p>
-                        <p className="truncate text-xs text-[var(--text-muted)]">{request.email}</p>
+                        <p className="truncate text-sm font-bold text-[var(--text-primary)]">
+                          {request.name}
+                        </p>
+                        <p className="truncate text-xs text-[var(--text-muted)]">
+                          {request.email}
+                        </p>
                       </div>
                     </div>
                     <StatusBadge status={request.status} />
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-[var(--bg-page)] p-3">
                     <div>
-                      <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">Role</p>
-                      <p className="mt-1 text-xs font-semibold text-[var(--text-secondary)]">{request.role}</p>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                        Role
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-[var(--text-secondary)]">
+                        {request.role}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">Submitted</p>
-                      <p className="mt-1 text-xs font-semibold text-[var(--text-secondary)]">{request.submittedAt}</p>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                        Submitted
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-[var(--text-secondary)]">
+                        {request.submittedAt}
+                      </p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleViewRequest(request)}
-                    className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] text-xs font-bold text-[var(--text-primary)] transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                    className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--badge-blue-text)]/30 hover:bg-[var(--badge-blue)] hover:text-[var(--badge-blue-text)]"
                   >
                     <Eye size={14} /> View Request
                   </button>
@@ -713,9 +912,12 @@ export default function VerificationDashboard() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--bg-page)] text-[var(--text-muted)]">
                   <Search size={20} />
                 </div>
-                <h3 className="mt-4 text-sm font-bold text-[var(--text-primary)]">No verification requests found</h3>
+                <h3 className="mt-4 text-sm font-bold text-[var(--text-primary)]">
+                  No verification requests found
+                </h3>
                 <p className="mt-1 max-w-sm text-xs text-[var(--text-muted)]">
-                  Try adjusting your search or filter to find a verification request.
+                  Try adjusting your search or filter to find a verification
+                  request.
                 </p>
               </div>
             )}

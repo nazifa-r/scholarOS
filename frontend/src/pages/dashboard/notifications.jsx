@@ -62,7 +62,7 @@ export default function Notifications() {
       transition={{ duration: 0.4 }}
       className="space-y-6 pb-8 w-full relative"
     >
-      <div className="flex items-end justify-between gap-8">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <div className="mb-1 text-xs font-medium text-[var(--text-muted)]">Updates</div>
           <h1 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
@@ -78,7 +78,8 @@ export default function Notifications() {
         </button>
       </div>
 
-      <div className="glass-panel inline-flex items-center rounded-2xl p-1.5 shadow-sm">
+      {/* Responsive Filter Tabs */}
+      <div className="glass-panel flex items-center rounded-2xl p-1.5 shadow-sm overflow-x-auto max-w-full">
         {Object.keys(tabTotals).map((filter) => {
           const isActive = filter === activeFilter;
           const count = filter === "Unread" ? unreadCount : tabTotals[filter];
@@ -87,7 +88,7 @@ export default function Notifications() {
               key={filter}
               onClick={() => setActiveFilter(filter)}
               className={cn(
-                "flex h-10 min-w-[100px] items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-all duration-200 active:scale-[0.98]",
+                "flex h-10 min-w-[100px] shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-all duration-200 active:scale-[0.98]",
                 isActive
                   ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-400/30"
                   : "text-slate-500 hover:bg-white/70 hover:text-slate-800",

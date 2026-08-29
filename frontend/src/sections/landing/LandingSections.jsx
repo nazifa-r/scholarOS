@@ -447,7 +447,7 @@ export function ProblemSection() {
           title="Great research breaks when the system around it is fragmented."
           description="Brilliant ideas often move through broken operations: scattered documents, invisible progress, disconnected collaborators, and generic software that was never designed for academic workflows."
         />
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {problemCards.map((card, index) => {
             const Icon = card.icon;
             return (
@@ -487,7 +487,7 @@ export function SolutionSection() {
         />
         <div className="relative mx-auto max-w-6xl">
           <div className="pointer-events-none absolute left-8 right-8 top-10 hidden h-px bg-gradient-to-r from-blue-200 via-violet-200 to-cyan-200 lg:block" />
-          <div className="grid gap-5 lg:grid-cols-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5">
             {workflowSteps.map((step, index) => {
               const Icon = step.icon;
               return (
@@ -528,7 +528,7 @@ export function FeaturesSection() {
           description="From repository management to review coordination, ScholarOS brings depth without visual chaos."
           className="mb-14"
         />
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {featureCards.map((feature, index) => {
             const Icon = featureIcons[feature.icon] ?? Sparkles;
             return (
@@ -572,7 +572,7 @@ export function ShowcaseSection() {
         />
         <Reveal className="glass-panel gradient-stroke overflow-hidden rounded-[36px] p-4 shadow-luxury sm:p-5">
           <div className="overflow-hidden rounded-[30px] bg-slate-950 text-white">
-            <div className="grid gap-0 xl:grid-cols-[0.82fr_1.18fr]">
+            <div className="grid grid-cols-1 xl:grid-cols-[0.82fr_1.18fr] gap-0">
               <div className="border-b border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(96,165,250,0.22),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(139,92,246,0.18),transparent_28%)] p-6 xl:border-b-0 xl:border-r">
                 <div className="flex items-center justify-between">
                   <div>
@@ -588,7 +588,7 @@ export function ShowcaseSection() {
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {projects.map((project) => (
                     <div
                       key={project.id}
@@ -626,7 +626,7 @@ export function ShowcaseSection() {
               </div>
 
               <div className="bg-[var(--bg-surface)] px-5 py-6 text-[var(--text-primary)] sm:px-6">
-                <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+                <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-5">
                   <div className="space-y-5">
                     <div className="rounded-[28px] border border-[var(--border)] bg-[var(--bg-surface)] p-5 flex flex-col gap-4">
                       <div className="flex items-center justify-between">
@@ -685,7 +685,7 @@ export function ShowcaseSection() {
                         </div>
                         <UsersRound className="h-5 w-5 text-cyan-300 shrink-0" />
                       </div>
-                      <div className="grid gap-2 sm:grid-cols-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         {researchers.map((person) => (
                           <div
                             key={person.name}
@@ -792,7 +792,7 @@ export function HowItWorksSection() {
           align="center"
           className="mb-14"
         />
-        <div className="grid gap-5 lg:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {howItWorksSteps.map((item, index) => (
             <Reveal
               key={item.step}
@@ -827,7 +827,7 @@ export function TestimonialsSection() {
           description="From doctoral candidates to faculty advisors, teams rely on ScholarOS to reduce friction and raise output quality."
           className="mb-14"
         />
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {testimonials.map((testimonial, index) => (
             <Reveal
               key={testimonial.name}
@@ -884,7 +884,7 @@ export function CtaSection() {
                 a product experience worthy of world-class ideas.
               </p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row shrink-0">
+            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
               <Button to="/register" className="px-6 py-3.5 text-base">
                 Register
               </Button>

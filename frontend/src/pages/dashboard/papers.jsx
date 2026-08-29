@@ -304,25 +304,24 @@ export default function Papers() {
 
   return (
     <div className="space-y-6 pb-8 w-full min-w-0 relative">
-      <div className="flex items-end justify-between w-full">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 w-full">
         <div>
           <div className="text-xs text-[var(--text-muted)] font-medium mb-1">
             Repository
           </div>
-          <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
             Research Papers
           </h1>
         </div>
         <button
           onClick={() => navigate("/dashboard/upload")}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-linear-to-r from-indigo-500 to-cyan-400 text-white text-sm font-bold shadow-lg shadow-indigo-400/30 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 active:scale-95"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-linear-to-r from-indigo-500 to-cyan-400 text-white text-sm font-bold shadow-lg shadow-indigo-400/30 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 active:scale-95 w-full sm:w-auto"
         >
           <Plus size={16} /> Upload Paper
         </button>
       </div>
 
-      {/* ScholarOS AI Banner */}
-      <div className="rounded-[28px] bg-linear-to-r from-[#161a35] via-[#1b2a4a] to-[#242145] text-white p-7 shadow-2xl shadow-indigo-900/20 relative overflow-hidden w-full">
+      <div className="rounded-[28px] bg-linear-to-r from-[#161a35] via-[#1b2a4a] to-[#242145] text-white p-5 sm:p-7 shadow-2xl shadow-indigo-900/20 relative overflow-hidden w-full">
         <div className="absolute -top-20 right-1/4 h-56 w-56 rounded-full bg-blue-500/15 blur-3xl" />
         <div className="absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-violet-500/15 blur-3xl" />
 

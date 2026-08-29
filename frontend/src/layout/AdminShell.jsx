@@ -54,8 +54,8 @@ export default function AdminShell() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)]">
-      {/* Desktop Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[260px] bg-[#0f111a] lg:flex lg:flex-col">
+      {/* Desktop Sidebar - always dark, matches DashboardShell sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[260px] bg-[var(--bg-sidebar)] lg:flex lg:flex-col">
         {/* Brand */}
         <div className="px-6 pt-7 pb-6">
           <div className="flex items-center gap-3">
@@ -68,7 +68,7 @@ export default function AdminShell() {
                 ScholarOS
               </div>
 
-              <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500 mt-0.5">
+              <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--sidebar-text)] mt-0.5">
                 Administration
               </div>
             </div>
@@ -80,7 +80,7 @@ export default function AdminShell() {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 overflow-y-auto">
-          <div className="px-3 mb-3 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">
+          <div className="px-3 mb-3 text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--sidebar-text)]">
             Administration
           </div>
 
@@ -97,7 +97,7 @@ export default function AdminShell() {
                     `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                       isActive
                         ? "bg-white/10 text-white shadow-sm"
-                        : "text-slate-400 hover:bg-white/5 hover:text-white"
+                        : "text-[var(--sidebar-text)] hover:bg-white/5 hover:text-white"
                     }`
                   }
                 >
@@ -106,7 +106,7 @@ export default function AdminShell() {
                       <Icon
                         size={17}
                         className={
-                          isActive ? "text-indigo-300" : "text-slate-500"
+                          isActive ? "text-indigo-300" : "text-[var(--sidebar-text)]"
                         }
                       />
 
@@ -124,7 +124,7 @@ export default function AdminShell() {
             })}
           </div>
 
-          <div className="px-3 mt-8 mb-3 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">
+          <div className="px-3 mt-8 mb-3 text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--sidebar-text)]">
             System
           </div>
 
@@ -140,7 +140,7 @@ export default function AdminShell() {
                     `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                       isActive
                         ? "bg-white/10 text-white"
-                        : "text-slate-400 hover:bg-white/5 hover:text-white"
+                        : "text-[var(--sidebar-text)] hover:bg-white/5 hover:text-white"
                     }`
                   }
                 >
@@ -149,7 +149,7 @@ export default function AdminShell() {
                       <Icon
                         size={17}
                         className={
-                          isActive ? "text-indigo-300" : "text-slate-500"
+                          isActive ? "text-indigo-300" : "text-[var(--sidebar-text)]"
                         }
                       />
 
@@ -175,7 +175,7 @@ export default function AdminShell() {
                   Administrator
                 </div>
 
-                <div className="text-[10px] text-slate-500 uppercase tracking-wide">
+                <div className="text-[10px] text-[var(--sidebar-text)] uppercase tracking-wide">
                   Admin
                 </div>
               </div>
@@ -183,7 +183,7 @@ export default function AdminShell() {
               <button
                 onClick={handleLogout}
                 title="Logout"
-                className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
+                className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--sidebar-text)] hover:text-white hover:bg-white/10 transition-colors"
               >
                 <LogOut size={15} />
               </button>
@@ -193,7 +193,7 @@ export default function AdminShell() {
       </aside>
 
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 inset-x-0 z-40 h-16 bg-[#0f111a] border-b border-white/10 px-4 flex items-center justify-between">
+      <div className="lg:hidden fixed top-0 inset-x-0 z-40 h-16 bg-[var(--bg-sidebar)] border-b border-white/10 px-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-xl bg-linear-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold text-sm">
             S
@@ -201,7 +201,7 @@ export default function AdminShell() {
 
           <div>
             <div className="text-sm font-bold text-white">ScholarOS</div>
-            <div className="text-[8px] font-bold uppercase tracking-[0.14em] text-slate-500">
+            <div className="text-[8px] font-bold uppercase tracking-[0.14em] text-[var(--sidebar-text)]">
               Administration
             </div>
           </div>
@@ -209,7 +209,7 @@ export default function AdminShell() {
 
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="h-9 w-9 rounded-xl flex items-center justify-center text-slate-300 hover:bg-white/10"
+          className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--sidebar-text)] hover:bg-white/10"
         >
           <Menu size={19} />
         </button>
@@ -230,7 +230,7 @@ export default function AdminShell() {
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-[280px] h-full bg-[#0f111a] p-5 flex flex-col shadow-2xl"
+              className="w-[85vw] max-w-[280px] h-full bg-[var(--bg-sidebar)] p-5 flex flex-col shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-5 border-b border-white/10">
@@ -244,7 +244,7 @@ export default function AdminShell() {
                       ScholarOS
                     </div>
 
-                    <div className="text-[8px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                    <div className="text-[8px] font-bold uppercase tracking-[0.14em] text-[var(--sidebar-text)]">
                       Administration
                     </div>
                   </div>
@@ -252,14 +252,14 @@ export default function AdminShell() {
 
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10"
+                  className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--sidebar-text)] hover:text-white hover:bg-white/10"
                 >
                   <X size={18} />
                 </button>
               </div>
 
               <nav className="flex-1 py-6 overflow-y-auto">
-                <div className="px-3 mb-3 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                <div className="px-3 mb-3 text-[9px] font-bold uppercase tracking-[0.16em] text-[var(--sidebar-text)]">
                   Administration
                 </div>
 
@@ -277,7 +277,7 @@ export default function AdminShell() {
                           `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                             isActive
                               ? "bg-white/10 text-white"
-                              : "text-slate-400 hover:bg-white/5 hover:text-white"
+                              : "text-[var(--sidebar-text)] hover:bg-white/5 hover:text-white"
                           }`
                         }
                       >
@@ -288,7 +288,7 @@ export default function AdminShell() {
                               className={
                                 isActive
                                   ? "text-indigo-300"
-                                  : "text-slate-500"
+                                  : "text-[var(--sidebar-text)]"
                               }
                             />
 
@@ -303,7 +303,7 @@ export default function AdminShell() {
 
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
+                className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-[var(--sidebar-text)] hover:bg-white/5 hover:text-white transition-colors"
               >
                 <LogOut size={17} />
                 Logout
