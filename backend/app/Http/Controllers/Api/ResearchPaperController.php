@@ -4,73 +4,152 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ResearchPaper;
+use App\Services\GoogleScholarService;
 use Illuminate\Http\Request;
 
 class ResearchPaperController extends Controller
 {
+    protected $scholarService;
+
+    public function __construct(GoogleScholarService $scholarService)
+    {
+        $this->scholarService = $scholarService;
+    }
+
     /**
-     * Get all research papers (with pagination and optional filters)
+     * Get all research papers (with search and filters)
+     * GET /api/v1/papers
+     *
+     * Query Params:
+     * - search: Search by title, abstract, authors, keywords
+     * - category: Filter by category
+     * - research_area: Filter by research area
+     * - status: Filter by status
+     * - per_page: Pagination limit (default: 10)
      */
     public function index(Request $request)
     {
-        $papers = $this->getPlaceholderPapers();
+        $query = ResearchPaper::query()
+            ->with(['category', 'researchArea', 'uploadedBy']);
 
-        // Apply filters to placeholder data
-        if ($request->has('search')) {
-            $search = strtolower($request->search);
-            $papers = array_filter($papers, function ($paper) use ($search) {
-                return strpos(strtolower($paper['title']), $search) !== false ||
-                       strpos(strtolower($paper['abstract']), $search) !== false ||
-                       strpos(strtolower($paper['authors']), $search) !== false;
-            });
-            $papers = array_values($papers);
+        // Apply search filter
+        if ($request->has('search') && !empty($request->search)) {
+            $query->search($request->search);
         }
 
+        // Apply category filter
         if ($request->has('category')) {
-            $category = $request->category;
-            $papers = array_filter($papers, function ($paper) use ($category) {
-                return $paper['category'] === $category;
-            });
-            $papers = array_values($papers);
+            $query->where('category', 'like', "%{$request->category}%");
         }
 
-        if ($request->has('publication_status')) {
-            $status = $request->publication_status;
-            $papers = array_filter($papers, function ($paper) use ($status) {
-                return $paper['publication_status'] === $status;
-            });
-            $papers = array_values($papers);
+        // Apply research area filter
+        if ($request->has('research_area')) {
+            $query->where('research_area', 'like', "%{$request->research_area}%");
         }
+
+        // Apply status filter
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Order by latest
+        $papers = $query->latest()->paginate($request->per_page ?? 10);
+
+        // Transform response to include Google Scholar links
+        $papers->getCollection()->transform(function ($paper) {
+            return $this->transformPaperWithScholarLinks($paper);
+        });
 
         return response()->json([
             'success' => true,
             'message' => 'Research papers retrieved successfully',
             'data' => $papers,
             'meta' => [
-                'total' => count($papers),
-                'per_page' => 10,
-                'current_page' => 1,
-                'last_page' => 1,
+                'total' => $papers->total(),
+                'per_page' => $papers->perPage(),
+                'current_page' => $papers->currentPage(),
+                'last_page' => $papers->lastPage(),
             ]
         ]);
     }
 
     /**
      * Get a single research paper
+     * GET /api/v1/papers/{id}
      */
     public function show($id)
     {
-        $paper = $this->getPlaceholderPaper($id);
+        $paper = ResearchPaper::with(['category', 'researchArea', 'uploadedBy', 'authors'])
+            ->find($id);
+
+        if (!$paper) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Research paper not found',
+            ], 404);
+        }
+
+        // Increment view count
+        $paper->increment('views');
 
         return response()->json([
             'success' => true,
             'message' => 'Research paper retrieved successfully',
-            'data' => $paper
+            'data' => $this->transformPaperWithScholarLinks($paper),
         ]);
     }
 
     /**
-     * Create a new research paper (placeholder)
+     * Search papers by title (dedicated search endpoint)
+     * GET /api/v1/papers/search
+     *
+     * Query Params:
+     * - q: Search query (required)
+     * - exact: Boolean - if true, search for exact match (default: false)
+     * - per_page: Pagination limit (default: 10)
+     */
+    public function search(Request $request)
+    {
+        $request->validate([
+            'q' => 'required|string|min:1|max:255',
+        ]);
+
+        $query = ResearchPaper::query()
+            ->with(['category', 'researchArea', 'uploadedBy']);
+
+        // If exact match is requested
+        if ($request->boolean('exact')) {
+            $query->searchExact($request->q);
+        } else {
+            // Fuzzy search
+            $query->search($request->q);
+        }
+
+        $papers = $query->latest()->paginate($request->per_page ?? 10);
+
+        // Transform response to include Google Scholar links
+        $papers->getCollection()->transform(function ($paper) {
+            return $this->transformPaperWithScholarLinks($paper);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Search results retrieved successfully',  // ← FIXED: Added closing quote
+            'data' => $papers,
+            'meta' => [
+                'query' => $request->q,
+                'exact_match' => $request->boolean('exact'),
+                'total' => $papers->total(),
+                'per_page' => $papers->perPage(),
+                'current_page' => $papers->currentPage(),
+                'last_page' => $papers->lastPage(),
+            ]
+        ]);
+    }
+
+    /**
+     * Create a new research paper
+     * POST /api/v1/papers
      */
     public function store(Request $request)
     {
@@ -89,10 +168,24 @@ class ResearchPaperController extends Controller
             'doi.regex' => 'The DOI format is invalid. Expected format: 10.xxxx/xxxxx',
         ]);
 
+        // Validate Google Scholar URL if provided
+        if (!empty($validated['google_scholar_url'])) {
+            if (!$this->scholarService->isValidScholarUrl($validated['google_scholar_url'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid Google Scholar URL',
+                    'errors' => [
+                        'google_scholar_url' => ['The Google Scholar URL must be a valid Google Scholar link.']
+                    ]
+                ], 422);
+            }
+        }
+
+        // Create paper (placeholder - will be replaced with real DB later)
         return response()->json([
             'success' => true,
             'message' => 'Research paper created successfully (placeholder - database integration pending)',
-            'data' => [
+            'data' => $this->transformScholarLinks([
                 'id' => rand(1000, 9999),
                 'title' => $validated['title'],
                 'abstract' => $validated['abstract'],
@@ -109,12 +202,13 @@ class ResearchPaperController extends Controller
                 'downloads' => 0,
                 'created_at' => now()->toISOString(),
                 'updated_at' => now()->toISOString(),
-            ]
+            ])
         ], 201);
     }
 
     /**
-     * Update an existing research paper (placeholder)
+     * Update a research paper
+     * PUT /api/v1/papers/{id}
      */
     public function update(Request $request, $id)
     {
@@ -133,10 +227,23 @@ class ResearchPaperController extends Controller
             'doi.regex' => 'The DOI format is invalid. Expected format: 10.xxxx/xxxxx',
         ]);
 
+        // Validate Google Scholar URL if provided
+        if (!empty($validated['google_scholar_url'])) {
+            if (!$this->scholarService->isValidScholarUrl($validated['google_scholar_url'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid Google Scholar URL',
+                    'errors' => [
+                        'google_scholar_url' => ['The Google Scholar URL must be a valid Google Scholar link.']
+                    ]
+                ], 422);
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Research paper updated successfully (placeholder - database integration pending)',
-            'data' => [
+            'data' => $this->transformScholarLinks([
                 'id' => (int) $id,
                 'title' => $validated['title'] ?? 'Updated Research Paper',
                 'abstract' => $validated['abstract'] ?? 'Updated abstract',
@@ -148,12 +255,13 @@ class ResearchPaperController extends Controller
                 'doi' => $validated['doi'] ?? null,
                 'publication_status' => $validated['publication_status'] ?? 'draft',
                 'updated_at' => now()->toISOString(),
-            ]
+            ])
         ]);
     }
 
     /**
-     * Delete a research paper (placeholder)
+     * Delete a research paper
+     * DELETE /api/v1/papers/{id}
      */
     public function destroy($id)
     {
@@ -168,40 +276,40 @@ class ResearchPaperController extends Controller
     }
 
     /**
-     * Get a single placeholder paper
+     * Transform a paper array to include Google Scholar links
+     *
+     * @param array $paper
+     * @return array
      */
-    private function getPlaceholderPaper($id)
+    private function transformScholarLinks(array $paper): array
     {
-        $papers = $this->getPlaceholderPapers();
+        $scholarLinks = $this->scholarService->getScholarLinks(
+            $paper['google_scholar_url'] ?? null,
+            $paper['title'] ?? null
+        );
 
-        foreach ($papers as $paper) {
-            if ($paper['id'] == $id) {
-                return $paper;
-            }
-        }
-
-        return [
-            'id' => (int) $id,
-            'title' => 'Sample Research Paper #' . $id,
-            'abstract' => 'This is a placeholder abstract for the research paper. In the actual implementation, this will be populated from the database.',
-            'keywords' => 'laravel, api, research, placeholder',
-            'research_area' => 'Computer Science',
-            'category' => 'Journal Article',
-            'authors' => 'Dr. John Smith, Jane Doe',
-            'google_scholar_url' => 'https://scholar.google.com/citations?user=sample123',
-            'doi' => '10.1234/sample.2024.01.001',
-            'publication_status' => 'published',
-            'status' => 'approved',
-            'is_verified' => true,
-            'views' => rand(10, 1000),
-            'downloads' => rand(5, 500),
-            'created_at' => now()->subDays(rand(1, 30))->toISOString(),
-            'updated_at' => now()->toISOString(),
-        ];
+        return array_merge($paper, $scholarLinks);
     }
 
     /**
-     * Get placeholder papers list with Google Scholar URLs and DOIs
+     * Transform a paper model to include Google Scholar links
+     *
+     * @param \App\Models\ResearchPaper $paper
+     * @return \App\Models\ResearchPaper
+     */
+    private function transformPaperWithScholarLinks(ResearchPaper $paper): ResearchPaper
+    {
+        $scholarLinks = $paper->getScholarLinks();
+
+        // Add the links as attributes
+        $paper->google_scholar_url = $scholarLinks['google_scholar_url'];
+        $paper->google_scholar_search_url = $scholarLinks['google_scholar_search_url'];
+
+        return $paper;
+    }
+
+    /**
+     * Get placeholder papers (for testing)
      */
     private function getPlaceholderPapers()
     {
@@ -232,7 +340,7 @@ class ResearchPaperController extends Controller
                 'research_area' => 'Natural Language Processing',
                 'category' => 'Conference Paper',
                 'authors' => 'Dr. Emily Brown, Dr. David Wilson',
-                'google_scholar_url' => 'https://scholar.google.com/citations?user=nlpml456',
+                'google_scholar_url' => null,
                 'doi' => '10.1016/j.nlp.2024.02.003',
                 'publication_status' => 'published',
                 'status' => 'approved',
@@ -250,7 +358,7 @@ class ResearchPaperController extends Controller
                 'research_area' => 'Data Mining',
                 'category' => 'Journal Article',
                 'authors' => 'Prof. Robert Taylor, Dr. Lisa Park',
-                'google_scholar_url' => 'https://scholar.google.com/citations?user=datamine789',
+                'google_scholar_url' => null,
                 'doi' => '10.1016/j.dm.2024.03.002',
                 'publication_status' => 'under_review',
                 'status' => 'pending',
@@ -268,7 +376,7 @@ class ResearchPaperController extends Controller
                 'research_area' => 'Cybersecurity',
                 'category' => 'Conference Paper',
                 'authors' => 'Dr. James Martinez, Dr. Anna Kim',
-                'google_scholar_url' => 'https://scholar.google.com/citations?user=iotsec321',
+                'google_scholar_url' => null,
                 'doi' => '10.1016/j.cyber.2024.04.001',
                 'publication_status' => 'submitted',
                 'status' => 'pending',

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\GoogleScholarService;
 
 class ResearchPaper extends Model
 {
@@ -51,7 +52,10 @@ class ResearchPaper extends Model
         'downloads' => 0,
     ];
 
-    // Relationships
+    // ============================================
+    // RELATIONSHIPS
+    // ============================================
+
     public function category()
     {
         return $this->belongsTo(Category::class);
@@ -97,7 +101,56 @@ class ResearchPaper extends Model
         return $this->hasMany(PaperVersion::class);
     }
 
-    // Scopes
+    // ============================================
+    // GOOGLE SCHOLAR METHODS
+    // ============================================
+
+    public function getScholarLinks(): array
+    {
+        $service = new GoogleScholarService();
+        return $service->getScholarLinks($this->google_scholar_url, $this->title);
+    }
+
+    public function getGoogleScholarLinkAttribute(): ?string
+    {
+        if ($this->google_scholar_url) {
+            return $this->google_scholar_url;
+        }
+
+        if ($this->title) {
+            $service = new GoogleScholarService();
+            return $service->generateSearchUrl($this->title);
+        }
+
+        return null;
+    }
+
+    public function getGoogleScholarSearchAttribute(): ?string
+    {
+        if ($this->title) {
+            $service = new GoogleScholarService();
+            return $service->generateSearchUrl($this->title);
+        }
+        return null;
+    }
+
+    public function hasExactScholarUrl(): bool
+    {
+        return !empty($this->google_scholar_url);
+    }
+
+    public function getDoiLinkAttribute(): ?string
+    {
+        if ($this->doi) {
+            return 'https://doi.org/' . $this->doi;
+        }
+        return null;
+    }
+
+    // ============================================
+    // SCOPES
+    // ============================================
+
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
@@ -113,7 +166,27 @@ class ResearchPaper extends Model
         return $query->where('is_verified', true);
     }
 
-    // Accessors
+    /**
+     * Search papers by title or abstract
+     * (keywords and authors are relationships, not columns)
+     */
+    public function scopeSearch($query, string $search)
+    {
+        return $query->where(function ($q) use ($search) {
+            $q->where('title', 'LIKE', "%{$search}%")
+              ->orWhere('abstract', 'LIKE', "%{$search}%");
+        });
+    }
+
+    public function scopeSearchExact($query, string $title)
+    {
+        return $query->where('title', '=', $title);
+    }
+
+    // ============================================
+    // ACCESSORS
+    // ============================================
+
     public function getFormattedAuthorsAttribute()
     {
         return $this->authors->pluck('full_name')->implode(', ');
@@ -130,21 +203,8 @@ class ResearchPaper extends Model
         return $badges[$this->status] ?? 'secondary';
     }
 
-    // Helper method to get Google Scholar URL with proper format
-    public function getGoogleScholarLinkAttribute()
+    public function getScholarDataAttribute(): array
     {
-        if ($this->google_scholar_url) {
-            return $this->google_scholar_url;
-        }
-        return null;
-    }
-
-    // Helper method to get DOI link
-    public function getDoiLinkAttribute()
-    {
-        if ($this->doi) {
-            return 'https://doi.org/' . $this->doi;
-        }
-        return null;
+        return $this->getScholarLinks();
     }
 }

@@ -173,6 +173,15 @@ Route::prefix('v1')->group(function () {
         );
 
         // ------------------------------------------------------------
+        // ⭐ NEW: SEARCH PAPERS
+        // GET /api/v1/papers/search?q=title&exact=true
+        // ------------------------------------------------------------
+        Route::get(
+            '/search',
+            [ResearchPaperController::class, 'search']
+        );
+
+        // ------------------------------------------------------------
         // GET SINGLE PAPER
         // GET /api/v1/papers/{id}
         // ------------------------------------------------------------
@@ -211,7 +220,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // ========================================================================
-    // DASHBOARD ROUTES (ADD THESE)
+    // DASHBOARD ROUTES
     // ========================================================================
 
     // All dashboard routes require authentication
