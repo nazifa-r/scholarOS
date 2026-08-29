@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, ArrowRight, LogOut } from "lucide-react"; // Added LogOut import
+import { Menu, X, ArrowRight, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Button from "../components/ui/Button.jsx";
 import { navigationLinks } from "../constants/site.js";
@@ -31,21 +31,19 @@ export default function SiteHeader() {
     setIsLoggedIn(localStorage.getItem("scholaros_user") === "true");
   }, []);
 
-  // UPDATED: Logout handler for the Landing Page header
   const handleLogout = () => {
     localStorage.removeItem("scholaros_user");
     setIsLoggedIn(false);
-    // Redirect to "/" (landing page) after logout
-    window.location.href = "/"; 
+    window.location.href = "/";
   };
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6 lg:px-8">
       <div
         className={cn(
-          "mx-auto max-w-7xl rounded-full border border-transparent transition-all duration-500 ease-out",
-          scrolled 
-            ? "border-white/20 bg-white/10 backdrop-blur-2xl shadow-[0_8px_32px_rgba(255,255,255,0.1)] shadow-[0_8px_32px_rgba(0,0,0,0.05)]" 
+          "mx-auto max-w-7xl rounded-full border transition-all duration-500 ease-out",
+          scrolled
+            ? "border-[var(--border)] bg-[var(--bg-surface)] backdrop-blur-2xl shadow-[var(--shadow-card)]"
             : "border-transparent bg-transparent shadow-none backdrop-blur-0"
         )}
       >
@@ -53,8 +51,8 @@ export default function SiteHeader() {
           <Link to="/" className="flex items-center gap-3">
             <img src={logoMark} alt="ScholarOS" className="h-10 w-10 rounded-2xl shadow-lg shadow-blue-500/20" />
             <div>
-              <div className="text-sm font-semibold tracking-[0.18em] text-slate-500 uppercase">ScholarOS</div>
-              <div className="text-sm text-slate-700">Research collaboration platform</div>
+              <div className="text-sm font-semibold tracking-[0.18em] text-[var(--text-muted)] uppercase">ScholarOS</div>
+              <div className="text-sm text-[var(--text-secondary)]">Research collaboration platform</div>
             </div>
           </Link>
 
@@ -63,14 +61,13 @@ export default function SiteHeader() {
               <a
                 key={item.label}
                 href={item.href}
-                className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-white/70 hover:text-slate-950"
+                className="rounded-full px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
               >
                 {item.label}
               </a>
             ))}
           </nav>
 
-          {/* UPDATED: Desktop Actions - Added Logout button for logged-in users */}
           <div className="hidden items-center gap-2 lg:flex">
             {isLoggedIn ? (
               <>
@@ -79,7 +76,7 @@ export default function SiteHeader() {
                 </Button>
                 <button
                   onClick={handleLogout}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 p-0 text-slate-500 shadow-sm backdrop-blur-xl hover:border-red-200 hover:bg-red-50 hover:text-red-600 hover:shadow-md transition-all duration-200"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-surface)] p-0 text-[var(--text-muted)] shadow-sm backdrop-blur-xl hover:border-red-200 hover:bg-red-50 hover:text-red-600 hover:shadow-md transition-all duration-200"
                   title="Logout"
                 >
                   <LogOut className="h-4 w-4" />
@@ -100,7 +97,7 @@ export default function SiteHeader() {
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 backdrop-blur-xl text-slate-700 shadow-[0_4px_12px_rgba(0,0,0,0.02)] lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-surface)] backdrop-blur-xl text-[var(--text-secondary)] shadow-[0_4px_12px_rgba(0,0,0,0.02)] lg:hidden"
             aria-label="Toggle menu"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -113,7 +110,7 @@ export default function SiteHeader() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden border-t border-white/20 px-4 pb-4 lg:hidden"
+              className="overflow-hidden border-t border-[var(--border)] px-4 pb-4 lg:hidden"
             >
               <div className="flex flex-col gap-2 pt-4">
                 {navigationLinks.map((item) => (
@@ -121,20 +118,19 @@ export default function SiteHeader() {
                     key={item.label}
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-white/70"
+                    className="rounded-2xl px-4 py-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-surface-elevated)]"
                   >
                     {item.label}
                   </a>
                 ))}
-                
-                {/* UPDATED: Mobile Actions - Added Logout button for logged-in users */}
+
                 <div className="mt-2 grid gap-2">
                   {isLoggedIn ? (
                     <>
                       <Button to="/dashboard" variant="primary">Dashboard</Button>
-                      <button 
+                      <button
                         onClick={handleLogout}
-                        className="flex items-center justify-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-3 text-sm font-medium text-slate-600 shadow-sm backdrop-blur-xl hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+                        className="flex items-center justify-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3 text-sm font-medium text-[var(--text-secondary)] shadow-sm backdrop-blur-xl hover:bg-red-50 hover:text-red-600 transition-all duration-200"
                       >
                         <LogOut className="h-4 w-4" />
                         Logout

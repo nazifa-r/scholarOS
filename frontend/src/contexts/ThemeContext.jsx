@@ -28,21 +28,43 @@ export const ThemeProvider = ({ children }) => {
     return theme;
   }, [getSystemTheme]);
 
-  const handleThemeChange = useCallback((newTheme) => {
-    setSelectedTheme(newTheme);
+  // originEvent: optional click/pointer event used to anchor the radial reveal animation
+  const handleThemeChange = useCallback((newTheme, originEvent) => {
     const resolved = resolveTheme(newTheme);
-    setResolvedTheme(resolved);
-    applyTheme(resolved);
-    try {
-      localStorage.setItem("scholaros_theme", newTheme);
-    } catch {}
+
+    // Set the origin point for the radial reveal (falls back to viewport center)
+    const x = originEvent ? (originEvent.clientX / window.innerWidth) * 100 : 50;
+    const y = originEvent ? (originEvent.clientY / window.innerHeight) * 100 : 50;
+    document.documentElement.style.setProperty("--theme-x", `${x}%`);
+    document.documentElement.style.setProperty("--theme-y", `${y}%`);
+
+    const commitTheme = () => {
+      setSelectedTheme(newTheme);
+      setResolvedTheme(resolved);
+      applyTheme(resolved);
+      try {
+        localStorage.setItem("scholaros_theme", newTheme);
+      } catch {
+        // localStorage may be unavailable, ignore silently
+      }
+    };
+
+    // Use the View Transition API for a smooth radial reveal when supported.
+    // Falls back to an instant (but still CSS-transitioned) theme swap otherwise.
+    if (document.startViewTransition) {
+      document.startViewTransition(commitTheme);
+    } else {
+      commitTheme();
+    }
   }, [resolveTheme, applyTheme]);
 
   useEffect(() => {
     let saved;
     try {
       saved = localStorage.getItem("scholaros_theme");
-    } catch {}
+    } catch {
+      // localStorage may be unavailable, ignore silently
+    }
     const initialTheme = saved || "system";
     setSelectedTheme(initialTheme);
     const initialResolved = resolveTheme(initialTheme);
@@ -55,8 +77,16 @@ export const ThemeProvider = ({ children }) => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = (e) => {
       const newResolved = e.matches ? "dark" : "light";
-      setResolvedTheme(newResolved);
-      applyTheme(newResolved);
+      // Smoothly animate system-driven changes too
+      if (document.startViewTransition) {
+        document.startViewTransition(() => {
+          setResolvedTheme(newResolved);
+          applyTheme(newResolved);
+        });
+      } else {
+        setResolvedTheme(newResolved);
+        applyTheme(newResolved);
+      }
     };
     media.addEventListener("change", handler);
     return () => media.removeEventListener("change", handler);

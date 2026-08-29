@@ -249,7 +249,7 @@ export default function DashboardShell() {
                       Notifications
                     </div>
                     <div className="space-y-3">
-                      <div className="p-3 bg-indigo-50/50 rounded-lg border border-[var(--border)]">
+                      <div className="p-3 bg-[var(--badge-blue)] rounded-lg border border-[var(--border)]">
                         <div className="text-sm font-medium text-[var(--text-primary)]">
                           New review added
                         </div>
@@ -257,7 +257,7 @@ export default function DashboardShell() {
                           Prof. Mensah commented on Methods.
                         </div>
                       </div>
-                      <div className="p-3 hover:bg-[var(--bg-surface)] rounded-lg transition-colors cursor-pointer">
+                      <div className="p-3 hover:bg-[var(--bg-surface-elevated)] rounded-lg transition-colors cursor-pointer">
                         <div className="text-sm font-medium text-[var(--text-primary)]">
                           Deadline approaching
                         </div>
@@ -265,7 +265,7 @@ export default function DashboardShell() {
                           BlueGrid Climate Archive due in 5d.
                         </div>
                       </div>
-                      <div className="p-3 hover:bg-[var(--bg-surface)] rounded-lg transition-colors cursor-pointer">
+                      <div className="p-3 hover:bg-[var(--bg-surface-elevated)] rounded-lg transition-colors cursor-pointer">
                         <div className="text-sm font-medium text-[var(--text-primary)]">
                           Milestone completed
                         </div>
@@ -305,7 +305,7 @@ export default function DashboardShell() {
 
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="fixed bottom-6 left-6 z-40 lg:hidden inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#0f111a] text-white shadow-xl"
+          className="fixed bottom-6 left-6 z-40 lg:hidden inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--bg-sidebar)] text-white shadow-xl"
         >
           <Menu size={20} />
         </button>
@@ -323,7 +323,7 @@ export default function DashboardShell() {
                 initial={{ x: -300 }}
                 animate={{ x: 0 }}
                 exit={{ x: -300 }}
-                className="w-[260px] h-full bg-[#0f111a] p-6 flex flex-col shadow-2xl"
+                className="w-[260px] h-full bg-[var(--bg-sidebar)] p-6 flex flex-col shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between pb-6 border-b border-white/10">

@@ -21,7 +21,7 @@ const papers = [
     id: "RP-2048",
     category: "Environmental AI",
     status: "Peer Review",
-    statusStyle: "text-blue-600 bg-blue-50",
+    statusStyle: "text-[var(--badge-blue-text)] bg-[var(--badge-blue)]",
     title: "Adaptive Graph Models for Predictive Climate Resilience Planning",
     authors: "Dr. Leila Morgan · Aarav Patel · Sofia Chen",
     citations: "128",
@@ -33,7 +33,7 @@ const papers = [
     id: "RP-1872",
     category: "Health Informatics",
     status: "Ready to Publish",
-    statusStyle: "text-emerald-700 bg-emerald-50",
+    statusStyle: "text-[var(--badge-emerald-text)] bg-[var(--badge-emerald)]",
     title:
       "Federated Medical Imaging Pipelines for Cross-Institutional Diagnostics",
     authors: "Prof. Nadia Mensah · Jonas Richter",
@@ -46,7 +46,7 @@ const papers = [
     id: "RP-1664",
     category: "Research Systems",
     status: "Draft",
-    statusStyle: "text-slate-700 bg-transparent",
+    statusStyle: "text-[var(--badge-slate-text)] bg-[var(--badge-slate)]",
     title:
       "Collaborative Knowledge Mapping in Multi-Disciplinary Research Teams",
     authors: "Elena Park · Samuel Okoye · Mina Ross",
@@ -59,7 +59,7 @@ const papers = [
     id: "RP-1530",
     category: "Cybersecurity",
     status: "In Revision",
-    statusStyle: "text-amber-700 bg-amber-50",
+    statusStyle: "text-[var(--badge-amber-text)] bg-[var(--badge-amber)]",
     title: "Quantum-Safe Identity Layers for Academic Infrastructure",
     authors: "Ibrahim Hassan · Dr. Yuki Sato",
     citations: "67",
@@ -77,7 +77,7 @@ function Chip({ label, active = false, onClick }) {
         "px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer",
         active
           ? "bg-linear-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-400/30"
-          : "bg-white/70 border border-slate-200/60 text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800"
+          : "bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]",
       )}
     >
       {label}
@@ -117,9 +117,8 @@ export default function Papers() {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (sortRef.current && !sortRef.current.contains(event.target)) {
+      if (sortRef.current && !sortRef.current.contains(event.target))
         setIsSortOpen(false);
-      }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -305,18 +304,15 @@ export default function Papers() {
 
   return (
     <div className="space-y-6 pb-8 w-full min-w-0 relative">
-      {/* Page Header */}
       <div className="flex items-end justify-between w-full">
         <div>
-          <div className="text-xs text-slate-500 font-medium mb-1">
+          <div className="text-xs text-[var(--text-muted)] font-medium mb-1">
             Repository
           </div>
-
-          <h1 className="text-3xl font-extrabold text-[#0f111a] tracking-tight">
+          <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
             Research Papers
           </h1>
         </div>
-
         <button
           onClick={() => navigate("/dashboard/upload")}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-linear-to-r from-indigo-500 to-cyan-400 text-white text-sm font-bold shadow-lg shadow-indigo-400/30 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 active:scale-95"
@@ -404,22 +400,22 @@ export default function Papers() {
         {/* LEFT SIDEBAR */}
         <div className="space-y-6 w-full min-w-0">
           {/* Filters */}
-          <div className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-7">
-            <div className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase mb-5">
+          <div className="glass-panel rounded-[28px] p-7">
+            <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-5">
               Filter Results
             </div>
 
-            <div className="text-sm font-bold text-[#0f111a] mb-2">
+            <div className="text-sm font-bold text-[var(--text-primary)] mb-2">
               Search by title
             </div>
 
             <input
               type="text"
               placeholder="Search papers…"
-              className="w-full px-4 py-2.5 rounded-xl bg-white/80 border border-slate-200/60 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all mb-6"
+              className="w-full px-4 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all mb-6"
             />
 
-            <div className="text-sm font-bold text-[#0f111a] mb-3">
+            <div className="text-sm font-bold text-[var(--text-primary)] mb-3">
               Category
             </div>
 
@@ -434,7 +430,7 @@ export default function Papers() {
               ))}
             </div>
 
-            <div className="text-sm font-bold text-[#0f111a] mb-3">
+            <div className="text-sm font-bold text-[var(--text-primary)] mb-3">
               Department
             </div>
 
@@ -444,7 +440,7 @@ export default function Papers() {
               ))}
             </div>
 
-            <div className="text-sm font-bold text-[#0f111a] mb-3">
+            <div className="text-sm font-bold text-[var(--text-primary)] mb-3">
               Publication Year
             </div>
 
@@ -459,7 +455,7 @@ export default function Papers() {
               ))}
             </div>
 
-            <div className="text-sm font-bold text-[#0f111a] mb-3">
+            <div className="text-sm font-bold text-[var(--text-primary)] mb-3">
               Status
             </div>
 
@@ -476,11 +472,10 @@ export default function Papers() {
           </div>
 
           {/* AI TRENDING TOPICS */}
-          <div className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-7">
+          <div className="glass-panel rounded-[28px] p-7">
             <div className="flex items-center gap-2 mb-5">
               <Sparkles size={14} className="text-amber-400" />
-
-              <span className="text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase">
+              <span className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase">
                 AI Trending Topics
               </span>
             </div>
@@ -488,13 +483,10 @@ export default function Papers() {
             {trendingLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((item) => (
-                  <div
-                    key={item}
-                    className="animate-pulse space-y-2 py-3"
-                  >
-                    <div className="h-3 w-10 bg-slate-200 rounded" />
-                    <div className="h-4 w-4/5 bg-slate-200 rounded" />
-                    <div className="h-3 w-2/3 bg-slate-200 rounded" />
+                  <div key={item} className="animate-pulse space-y-2 py-3">
+                    <div className="h-3 w-10 bg-[var(--muted)] rounded" />
+                    <div className="h-4 w-4/5 bg-[var(--muted)] rounded" />
+                    <div className="h-3 w-2/3 bg-[var(--muted)] rounded" />
                   </div>
                 ))}
               </div>
@@ -503,26 +495,26 @@ export default function Papers() {
                 {trendingError}
               </div>
             ) : trendingTopics.length === 0 ? (
-              <div className="text-sm text-slate-500">
+              <div className="text-sm text-[var(--text-secondary)]">
                 No trending research topics available.
               </div>
             ) : (
-              <div className="divide-y divide-slate-200/60">
+              <div className="divide-y divide-[var(--border)]">
                 {trendingTopics.map((topic, index) => (
                   <div
                     key={topic.id ?? index}
                     className="flex items-start gap-4 py-4 first:pt-0 last:pb-0"
                   >
-                    <div className="text-sm font-semibold text-slate-300 pt-0.5">
+                    <div className="text-sm font-semibold text-[var(--text-muted)] pt-0.5">
                       {String(index + 1).padStart(2, "0")}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-[#0f111a] leading-snug">
+                      <div className="text-sm font-bold text-[var(--text-primary)] leading-snug">
                         {topic.title}
                       </div>
 
-                      <div className="text-xs text-slate-400 mt-1">
+                      <div className="text-xs text-[var(--text-muted)] mt-1">
                         {topic.trend} mentions this quarter
                       </div>
 
@@ -536,7 +528,7 @@ export default function Papers() {
                             {topic.keywords.slice(0, 3).map((keyword) => (
                               <span
                                 key={keyword}
-                                className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500"
+                                className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--muted)] text-[var(--muted-foreground)]"
                               >
                                 {keyword}
                               </span>
@@ -569,14 +561,14 @@ export default function Papers() {
             className="flex items-center justify-between relative"
             ref={sortRef}
           >
-            <div className="text-sm text-slate-500 font-medium">
+            <div className="text-sm text-[var(--text-muted)] font-medium">
               Showing 4 of 10,204 papers
             </div>
 
             <div className="relative z-20">
               <button
                 onClick={() => setIsSortOpen(!isSortOpen)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/70 border border-slate-200/50 text-sm font-semibold text-slate-600 shadow-sm hover:bg-white hover:shadow transition-all duration-200"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)] shadow-sm hover:bg-[var(--bg-surface-elevated)] transition-all duration-200"
               >
                 Sort: {sortBy}{" "}
                 <ChevronDown
@@ -594,7 +586,7 @@ export default function Papers() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -5 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 w-40 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 overflow-hidden"
+                    className="absolute right-0 top-full mt-2 w-40 bg-[var(--bg-surface-elevated)] rounded-xl shadow-xl border border-[var(--border)] p-1.5 overflow-hidden"
                   >
                     {["Most Recent", "Most Cited", "A-Z"].map((option) => (
                       <button
@@ -605,8 +597,8 @@ export default function Papers() {
                         }}
                         className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
                           sortBy === option
-                            ? "bg-indigo-50 text-indigo-700 font-semibold"
-                            : "text-slate-700 hover:bg-indigo-50"
+                            ? "bg-[var(--badge-blue)] text-[var(--badge-blue-text)] font-semibold"
+                            : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]"
                         }`}
                       >
                         {option}
@@ -626,7 +618,7 @@ export default function Papers() {
             return (
               <div
                 key={p.id}
-                className="rounded-[28px] bg-white/60 backdrop-blur-md border border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.04)] p-7 transition-all hover:shadow-lg hover:border-indigo-200/80 group/card w-full"
+                className="glass-panel rounded-[28px] p-7 transition-all hover:shadow-lg hover:border-indigo-200/80 group/card w-full"
               >
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-start w-full">
                   {/* PDF ICON */}
@@ -637,7 +629,7 @@ export default function Papers() {
                   <div className="flex-1 min-w-0 space-y-3">
                     {/* CATEGORY / STATUS */}
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-medium px-2.5 py-1 rounded-full text-slate-600 bg-slate-100">
+                      <span className="text-xs font-medium px-2.5 py-1 rounded-full text-[var(--muted-foreground)] bg-[var(--muted)]">
                         {p.category}
                       </span>
 
@@ -649,19 +641,19 @@ export default function Papers() {
                     </div>
 
                     {/* TITLE */}
-                    <h3 className="text-xl font-extrabold text-[#0f111a] tracking-tight leading-snug hover:text-indigo-600 transition-colors duration-200 cursor-pointer">
+                    <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight leading-snug hover:text-indigo-600 transition-colors duration-200 cursor-pointer">
                       {p.title}
                     </h3>
 
                     {/* AUTHORS */}
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-muted)]">
                       <span>{p.authors}</span>
-                      <span className="text-slate-300">·</span>
+                      <span className="text-[var(--text-muted)]">·</span>
                       <span className="font-mono text-xs">{p.id}</span>
                     </div>
 
                     {/* ABSTRACT */}
-                    <p className="text-[15px] text-slate-500 leading-relaxed">
+                    <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed">
                       {p.abstract}
                     </p>
 
@@ -693,7 +685,7 @@ export default function Papers() {
                           <button
                             onClick={() => handleSummarize(p)}
                             disabled={isSummarizing}
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 hover:underline transition-colors duration-200 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-indigo-600 hover:underline transition-colors duration-200 disabled:opacity-50"
                           >
                             <RotateCw
                               size={12}
@@ -709,7 +701,7 @@ export default function Papers() {
                             Summary
                           </div>
 
-                          <p className="text-[15px] text-slate-600 leading-relaxed">
+                          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed">
                             {aiSummary.summary}
                           </p>
                         </div>
@@ -727,7 +719,7 @@ export default function Papers() {
                                   (finding, findingIndex) => (
                                     <li
                                       key={findingIndex}
-                                      className="flex items-start gap-2 text-sm text-slate-600 leading-relaxed"
+                                      className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-relaxed"
                                     >
                                       <span className="text-indigo-400 mt-1">
                                         •
@@ -753,7 +745,7 @@ export default function Papers() {
                                   (contribution, contributionIndex) => (
                                     <li
                                       key={contributionIndex}
-                                      className="flex items-start gap-2 text-sm text-slate-600 leading-relaxed"
+                                      className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-relaxed"
                                     >
                                       <span className="text-indigo-400 mt-1">
                                         •
@@ -778,7 +770,7 @@ export default function Papers() {
                                 {aiSummary.keywords.map((keyword) => (
                                   <span
                                     key={keyword}
-                                    className="px-2.5 py-1 rounded-full bg-white border border-indigo-100 text-xs font-semibold text-slate-600"
+                                    className="px-2.5 py-1 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] text-xs font-semibold text-[var(--text-secondary)]"
                                   >
                                     {keyword}
                                   </span>
@@ -792,7 +784,7 @@ export default function Papers() {
                       <button
                         onClick={() => handleSummarize(p)}
                         disabled={summarizingPaperId !== null}
-                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700 hover:text-indigo-600 hover:underline transition-colors duration-200 mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)] hover:text-indigo-600 hover:underline transition-colors duration-200 mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Sparkles size={14} className="text-amber-400" />
                         Summarize with AI
@@ -803,35 +795,35 @@ export default function Papers() {
                   {/* STATS / BOOKMARK */}
                   <div className="flex shrink-0 items-center gap-6 pl-0 sm:pl-4">
                     <div className="text-center">
-                      <div className="text-xl font-extrabold text-[#0f111a]">
+                      <div className="text-xl font-extrabold text-[var(--text-primary)]">
                         {p.citations}
                       </div>
 
-                      <div className="text-[10px] text-slate-400 tracking-[0.08em] uppercase">
+                      <div className="text-[10px] text-[var(--text-muted)] tracking-[0.08em] uppercase">
                         Citations
                       </div>
                     </div>
 
                     <div className="text-center">
-                      <div className="text-xl font-extrabold text-[#0f111a]">
+                      <div className="text-xl font-extrabold text-[var(--text-primary)]">
                         {p.views}
                       </div>
 
-                      <div className="text-[10px] text-slate-400 tracking-[0.08em] uppercase">
+                      <div className="text-[10px] text-[var(--text-muted)] tracking-[0.08em] uppercase">
                         Views
                       </div>
                     </div>
 
                     <button
                       onClick={() => toggleBookmark(p.id)}
-                      className="h-9 w-9 rounded-full bg-white/80 border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center"
+                      className="h-9 w-9 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center"
                     >
                       {bookmarkedIds.has(p.id) ? (
-                        <BookmarkCheck className="text-indigo-500" size={16} />
+                        <BookmarkCheck size={16} className="text-indigo-500" />
                       ) : (
                         <Bookmark
                           size={16}
-                          className="text-slate-400 hover:text-indigo-500 transition-colors duration-200"
+                          className="text-[var(--text-muted)] hover:text-indigo-500 transition-colors duration-200"
                         />
                       )}
                     </button>
