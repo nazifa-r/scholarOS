@@ -5,6 +5,12 @@ use App\Http\Controllers\Api\ResearchPaperController;
 use App\Http\Controllers\Api\ResearchAreaController;
 use App\Http\Controllers\Api\RoleVerificationController;
 use App\Http\Controllers\Api\Admin\VerificationController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\PaperController;
+use App\Http\Controllers\Api\ResearcherController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PaperSubmissionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -17,7 +23,6 @@ use Illuminate\Support\Facades\Route;
 | Versioned application routes are under /api/v1/*
 |
 */
-
 
 // ============================================================================
 // AUTHENTICATION ROUTES
@@ -51,7 +56,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-
 // ============================================================================
 // VERSION 1 API ROUTES
 // ============================================================================
@@ -70,7 +74,6 @@ Route::prefix('v1')->group(function () {
             'timestamp' => now()->toISOString()
         ]);
     });
-
 
     // ========================================================================
     // ADMIN VERIFICATION
@@ -115,7 +118,6 @@ Route::prefix('v1')->group(function () {
             );
         });
 
-
     // ========================================================================
     // RESEARCH AREAS
     // ========================================================================
@@ -133,7 +135,6 @@ Route::prefix('v1')->group(function () {
         '/research-areas',
         [ResearchAreaController::class, 'store']
     );
-
 
     // ========================================================================
     // ROLE VERIFICATION
@@ -157,7 +158,6 @@ Route::prefix('v1')->group(function () {
         );
     });
 
-
     // ========================================================================
     // RESEARCH PAPERS
     // ========================================================================
@@ -173,6 +173,14 @@ Route::prefix('v1')->group(function () {
             [ResearchPaperController::class, 'index']
         );
 
+        // ------------------------------------------------------------
+        // SEARCH PAPERS
+        // GET /api/v1/papers/search?q=title&exact=true
+        // ------------------------------------------------------------
+        Route::get(
+            '/search',
+            [ResearchPaperController::class, 'search']
+        );
 
         // ------------------------------------------------------------
         // GET SINGLE PAPER
@@ -182,7 +190,6 @@ Route::prefix('v1')->group(function () {
             '/{id}',
             [ResearchPaperController::class, 'show']
         );
-
 
         // ------------------------------------------------------------
         // PROTECTED PAPER ROUTES
@@ -213,25 +220,126 @@ Route::prefix('v1')->group(function () {
         });
     });
 
+    // ========================================================================
+    // PAPER SUBMISSIONS (NEW)
+    // ========================================================================
+
+    Route::prefix('submissions')->group(function () {
+
+        // ------------------------------------------------------------
+        // AUTHENTICATED USER ROUTES
+        // ------------------------------------------------------------
+        
+        Route::middleware('auth:sanctum')->group(function () {
+            
+            // GET /api/v1/submissions - Get user's papers
+            Route::get('/', [PaperSubmissionController::class, 'index']);
+            
+            // POST /api/v1/submissions - Create draft
+            Route::post('/', [PaperSubmissionController::class, 'store']);
+            
+            // GET /api/v1/submissions/{id} - Get single paper
+            Route::get('/{id}', [PaperSubmissionController::class, 'show']);
+            
+            // PUT /api/v1/submissions/{id} - Update draft
+            Route::put('/{id}', [PaperSubmissionController::class, 'update']);
+            
+            // DELETE /api/v1/submissions/{id} - Delete paper (draft or rejected only)
+            Route::delete('/{id}', [PaperSubmissionController::class, 'destroy']);
+            
+            // POST /api/v1/submissions/{id}/submit - Submit for approval
+            Route::post('/{id}/submit', [PaperSubmissionController::class, 'submit']);
+        });
+        
+        // ------------------------------------------------------------
+        // ADMIN ROUTES (Review & Approve)
+        // ------------------------------------------------------------
+        
+        Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+            
+            // GET /api/v1/submissions/review - Get papers for review
+            Route::get('/review', [PaperSubmissionController::class, 'reviewIndex']);
+            
+            // POST /api/v1/submissions/{id}/approve - Approve paper
+            Route::post('/{id}/approve', [PaperSubmissionController::class, 'approve']);
+            
+            // POST /api/v1/submissions/{id}/reject - Reject paper
+            Route::post('/{id}/reject', [PaperSubmissionController::class, 'reject']);
+            
+            // POST /api/v1/submissions/{id}/return-to-draft - Return to draft
+            Route::post('/{id}/return-to-draft', [PaperSubmissionController::class, 'returnToDraft']);
+        });
+    });
+
+    // ========================================================================
+    // DASHBOARD ROUTES
+    // ========================================================================
+
+    // All dashboard routes require authentication
+    Route::middleware('auth:sanctum')->prefix('dashboard')->group(function () {
+
+        // ------------------------------------------------------------
+        // STATISTICS
+        // GET /api/v1/dashboard/stats
+        // ------------------------------------------------------------
+        Route::get('/stats', [DashboardController::class, 'stats']);
+
+        // ------------------------------------------------------------
+        // RECENT ACTIVITY
+        // GET /api/v1/dashboard/recent-activity
+        // ------------------------------------------------------------
+        Route::get('/recent-activity', [DashboardController::class, 'recentActivity']);
+
+        // ------------------------------------------------------------
+        // PROJECTS
+        // ------------------------------------------------------------
+        Route::get('/projects', [ProjectController::class, 'index']);
+        Route::get('/projects/{id}', [ProjectController::class, 'show']);
+        Route::post('/projects', [ProjectController::class, 'store']);
+
+        // ------------------------------------------------------------
+        // PAPERS
+        // ------------------------------------------------------------
+        Route::get('/papers', [PaperController::class, 'index']);
+        Route::get('/papers/stats', [PaperController::class, 'stats']);
+
+        // ------------------------------------------------------------
+        // RESEARCHERS
+        // ------------------------------------------------------------
+        Route::get('/researchers', [ResearcherController::class, 'index']);
+        Route::get('/researchers/{id}', [ResearcherController::class, 'show']);
+        Route::get('/researchers/search', [ResearcherController::class, 'search']);
+
+        // ------------------------------------------------------------
+        // NOTIFICATIONS
+        // ------------------------------------------------------------
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/count', [NotificationController::class, 'count']);
+        Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    });
 
     // ========================================================================
     // VERSIONED USER PROFILE
     // ========================================================================
 
     // GET /api/v1/user
-   Route::middleware('auth:sanctum')->get(
-    '/user',
-    function (Request $request) {
-        $user = $request->user()->load([
-            'role',
-            'researchAreas',
-        ]);
+    Route::middleware('auth:sanctum')->get(
+        '/user',
+        function (Request $request) {
+            $user = $request->user()->load([
+                'role',
+                'researchAreas',
+                'department',
+                'projectsAsMember',
+                'supervisedProjects',
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $user,
-        ]);
-    }
-);
-
+            return response()->json([
+                'success' => true,
+                'data' => $user,
+            ]);
+        }
+    );
 });
