@@ -42,7 +42,13 @@ export default function LoginPage() {
       localStorage.setItem("scholaros_token", data.token);
       localStorage.setItem("scholaros_user", JSON.stringify(data.user));
 
-      navigate("/dashboard");
+      // Redirect administrators to the admin dashboard.
+      // All other authenticated users go to the regular dashboard.
+      if (data.user.role_id === 4) {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error) {
       if (error.status === 403 && error.data?.requires_verification) {
         sessionStorage.setItem(

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Search,
   SlidersHorizontal,
@@ -14,65 +14,10 @@ import {
   CalendarDays,
   GraduationCap,
   Maximize2,
-  AlertTriangle,
-  X,
-  Check,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
-
-const initialVerificationRequests = [
-  {
-    id: 1,
-    name: "Nusrat Jahan",
-    email: "nusrat.jahan@example.com",
-    role: "Student",
-    submittedAt: "Aug 28, 2026",
-    status: "Pending",
-    idCard:
-      "https://placehold.co/1200x750/eef2ff/4f46e5?text=University+ID+Card",
-  },
-  {
-    id: 2,
-    name: "John Smith",
-    email: "john.smith@example.com",
-    role: "Faculty/Supervisor",
-    submittedAt: "Aug 27, 2026",
-    status: "Pending",
-    idCard:
-      "https://placehold.co/1200x750/f5f3ff/6d28d9?text=University+ID+Card",
-  },
-  {
-    id: 3,
-    name: "Sarah Ahmed",
-    email: "sarah.ahmed@example.com",
-    role: "Student",
-    submittedAt: "Aug 26, 2026",
-    status: "Approved",
-    idCard:
-      "https://placehold.co/1200x750/ecfdf5/047857?text=University+ID+Card",
-  },
-  {
-    id: 4,
-    name: "Michael Brown",
-    email: "michael.brown@example.com",
-    role: "Faculty/Supervisor",
-    submittedAt: "Aug 25, 2026",
-    status: "Rejected",
-    rejectionReason:
-      "The uploaded ID card could not be verified.",
-    idCard:
-      "https://placehold.co/1200x750/fef2f2/be123c?text=University+ID+Card",
-  },
-  {
-    id: 5,
-    name: "Ayesha Rahman",
-    email: "ayesha.rahman@example.com",
-    role: "Student",
-    submittedAt: "Aug 24, 2026",
-    status: "Approved",
-    idCard:
-      "https://placehold.co/1200x750/f0fdf4/15803d?text=University+ID+Card",
-  },
-];
+import { apiRequest } from "../../utils/api.js";
 
 const statusConfig = {
   Pending: {
@@ -81,8 +26,7 @@ const statusConfig = {
   },
   Approved: {
     icon: CheckCircle2,
-    className:
-      "bg-emerald-50 text-emerald-700 border-emerald-200",
+    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
   },
   Rejected: {
     icon: XCircle,
@@ -138,174 +82,133 @@ function DetailItem({ icon: Icon, label, value }) {
       </div>
 
       <p className="mt-1.5 break-words text-sm font-semibold text-[var(--text-primary)]">
-        {value}
+        {value || "—"}
       </p>
     </div>
   );
 }
 
-function ActionModal({
-  type,
-  request,
-  rejectionReason,
-  setRejectionReason,
-  onCancel,
-  onConfirm,
-  processing,
-}) {
-  const isReject = type === "reject";
+function formatDate(dateString) {
+  if (!dateString) {
+    return "—";
+  }
 
-  const trimmedReason = rejectionReason.trim();
+  const date = new Date(dateString);
 
-  return (
-    <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      onClick={onCancel}
-    >
-      <div
-        className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-2xl sm:p-6"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                isReject
-                  ? "bg-rose-50 text-rose-600"
-                  : "bg-emerald-50 text-emerald-600"
-              }`}
-            >
-              {isReject ? (
-                <AlertTriangle size={18} />
-              ) : (
-                <CheckCircle2 size={18} />
-              )}
-            </div>
+  if (Number.isNaN(date.getTime())) {
+    return dateString;
+  }
 
-            <div>
-              <h3 className="text-base font-extrabold text-[var(--text-primary)]">
-                {isReject
-                  ? "Reject verification request?"
-                  : "Approve verification request?"}
-              </h3>
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
-              <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
-                {isReject
-                  ? `Please provide a reason for rejecting ${request.name}'s verification request.`
-                  : `Are you sure you want to approve ${request.name}'s verification request?`}
-              </p>
-            </div>
-          </div>
+function formatRole(role) {
+  if (!role) {
+    return "—";
+  }
 
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={processing}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--bg-page)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label="Close"
-          >
-            <X size={17} />
-          </button>
-        </div>
+  const normalized = role.toLowerCase();
 
-        {isReject && (
-          <div className="mt-5">
-            <label
-              htmlFor="rejection-reason"
-              className="mb-2 block text-xs font-bold text-[var(--text-primary)]"
-            >
-              Rejection reason
-              <span className="ml-1 text-rose-500">*</span>
-            </label>
+  if (normalized === "faculty" || normalized === "supervisor") {
+    return "Faculty/Supervisor";
+  }
 
-            <textarea
-              id="rejection-reason"
-              value={rejectionReason}
-              onChange={(event) =>
-                setRejectionReason(event.target.value)
-              }
-              placeholder="Explain why this verification request is being rejected..."
-              rows={4}
-              disabled={processing}
-              className="w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--bg-page)] px-3 py-3 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-rose-300 focus:ring-2 focus:ring-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
-            />
+  if (normalized === "student") {
+    return "Student";
+  }
 
-            <div className="mt-1.5 flex items-center justify-between">
-              <p className="text-[10px] text-[var(--text-muted)]">
-                A clear reason helps the user understand what needs to
-                be corrected.
-              </p>
+  return role;
+}
 
-              <span className="shrink-0 text-[10px] text-[var(--text-muted)]">
-                {rejectionReason.length}/500
-              </span>
-            </div>
-          </div>
-        )}
+function formatStatus(status) {
+  if (!status) {
+    return "Pending";
+  }
 
-        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={processing}
-            className="h-10 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] px-4 text-xs font-bold text-[var(--text-primary)] transition hover:bg-[var(--bg-card)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Cancel
-          </button>
+  const normalized = status.toLowerCase();
 
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={
-              processing ||
-              (isReject && !trimmedReason)
-            }
-            className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-xs font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-40 ${
-              isReject
-                ? "bg-rose-600 hover:bg-rose-700"
-                : "bg-emerald-600 hover:bg-emerald-700"
-            }`}
-          >
-            {processing ? (
-              <>
-                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                Processing...
-              </>
-            ) : isReject ? (
-              <>
-                <XCircle size={14} />
-                Confirm Rejection
-              </>
-            ) : (
-              <>
-                <CheckCircle2 size={14} />
-                Confirm Approval
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  if (normalized === "pending") {
+    return "Pending";
+  }
+
+  if (normalized === "approved") {
+    return "Approved";
+  }
+
+  if (normalized === "rejected") {
+    return "Rejected";
+  }
+
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function normalizeVerification(request) {
+  return {
+    id: request.id,
+    name: request.user?.name || request.user?.full_name || "Unknown User",
+    email: request.user?.email || "—",
+    institution: request.user?.institution || "—",
+    role: formatRole(request.role),
+    submittedAt: formatDate(request.submitted_at),
+    status: formatStatus(request.status),
+    rejectionReason: request.rejection_reason || null,
+    reviewedAt: formatDate(request.reviewed_at),
+    idCardPath: request.id_card?.path || request.id_card_path || null,
+    idCardAvailable: request.id_card?.available ?? Boolean(request.id_card_path),
+  };
 }
 
 export default function VerificationDashboard() {
-  const [verificationRequests, setVerificationRequests] = useState(
-    initialVerificationRequests
-  );
-
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [roleFilter, setRoleFilter] = useState("All");
 
+  const [verificationRequests, setVerificationRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+
   const [isImageExpanded, setIsImageExpanded] = useState(false);
+  const [idCardUrl, setIdCardUrl] = useState("");
 
-  const [actionModal, setActionModal] = useState(null);
+  const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [processingAction, setProcessingAction] = useState(false);
 
-  const [feedback, setFeedback] = useState(null);
+  const loadVerificationRequests = async () => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await apiRequest("/v1/admin/verifications");
+
+      const requests = Array.isArray(response?.data) ? response.data : [];
+
+      setVerificationRequests(requests.map(normalizeVerification));
+    } catch (err) {
+      console.error("Failed to load verification requests:", err);
+
+      const message =
+        err?.data?.message ||
+        "Unable to load verification requests. Please try again.";
+
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadVerificationRequests();
+  }, []);
 
   const totalRequests = verificationRequests.length;
 
@@ -331,64 +234,119 @@ export default function VerificationDashboard() {
         request.email.toLowerCase().includes(query);
 
       const matchesStatus =
-        statusFilter === "All" ||
-        request.status === statusFilter;
+        statusFilter === "All" || request.status === statusFilter;
 
       const matchesRole =
-        roleFilter === "All" ||
-        request.role === roleFilter;
+        roleFilter === "All" || request.role === roleFilter;
 
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesRole
-      );
+      return matchesSearch && matchesStatus && matchesRole;
     });
-  }, [
-    verificationRequests,
-    searchQuery,
-    statusFilter,
-    roleFilter,
-  ]);
+  }, [verificationRequests, searchQuery, statusFilter, roleFilter]);
 
-  const handleViewRequest = (request) => {
+  const clearIdCardUrl = () => {
+    if (idCardUrl) {
+      URL.revokeObjectURL(idCardUrl);
+    }
+
+    setIdCardUrl("");
+  };
+
+  const loadIdCard = async (requestId) => {
+    clearIdCardUrl();
+
+    try {
+      const token = localStorage.getItem("scholaros_token");
+
+      const response = await fetch(
+        `http://localhost:8000/api/v1/admin/verifications/${requestId}/id-card`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "image/*,application/json",
+            ...(token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                }
+              : {}),
+          },
+        }
+      );
+
+      if (!response.ok) {
+        let errorData = {};
+
+        try {
+          errorData = await response.json();
+        } catch {
+          // Response was not JSON.
+        }
+
+        throw {
+          status: response.status,
+          data: errorData,
+        };
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      setIdCardUrl(objectUrl);
+    } catch (err) {
+      console.error("Failed to load ID card:", err);
+
+      setActionError(
+        err?.data?.message ||
+          "Unable to load the university ID card. Please try again."
+      );
+    }
+  };
+
+  const handleViewRequest = async (request) => {
     setSelectedRequest(request);
     setIsImageExpanded(false);
-    setFeedback(null);
+    setShowRejectForm(false);
+    setRejectionReason("");
+    setActionError("");
+
+    setIsLoadingDetails(true);
+
+    try {
+      const response = await apiRequest(
+        `/v1/admin/verifications/${request.id}`
+      );
+
+      if (response?.data) {
+        const details = normalizeVerification(response.data);
+
+        setSelectedRequest(details);
+
+        if (details.idCardAvailable) {
+          await loadIdCard(details.id);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load verification details:", err);
+
+      setActionError(
+        err?.data?.message ||
+          "Unable to load the verification details. Please try again."
+      );
+
+      if (request.idCardAvailable) {
+        await loadIdCard(request.id);
+      }
+    } finally {
+      setIsLoadingDetails(false);
+    }
   };
 
   const handleCloseDetails = () => {
     setSelectedRequest(null);
     setIsImageExpanded(false);
-    setActionModal(null);
+    setShowRejectForm(false);
     setRejectionReason("");
-  };
-
-  const openApproveModal = () => {
-    if (!selectedRequest || selectedRequest.status !== "Pending") {
-      return;
-    }
-
-    setActionModal("approve");
-    setRejectionReason("");
-  };
-
-  const openRejectModal = () => {
-    if (!selectedRequest || selectedRequest.status !== "Pending") {
-      return;
-    }
-
-    setActionModal("reject");
-    setRejectionReason("");
-  };
-
-  const closeActionModal = () => {
-    if (processingAction) {
-      return;
-    }
-
-    setActionModal(null);
-    setRejectionReason("");
+    setActionError("");
+    clearIdCardUrl();
   };
 
   const handleApprove = async () => {
@@ -396,74 +354,125 @@ export default function VerificationDashboard() {
       return;
     }
 
-    setProcessingAction(true);
+    setIsProcessing(true);
+    setActionError("");
 
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    try {
+      const response = await apiRequest(
+        `/v1/admin/verifications/${selectedRequest.id}/approve`,
+        {
+          method: "POST",
+        }
+      );
 
-    const updatedRequest = {
-      ...selectedRequest,
-      status: "Approved",
-      rejectionReason: null,
-    };
+      if (response?.data) {
+        const updatedRequest = normalizeVerification(response.data);
 
-    setVerificationRequests((currentRequests) =>
-      currentRequests.map((request) =>
-        request.id === selectedRequest.id
-          ? updatedRequest
-          : request
-      )
-    );
+        setSelectedRequest(updatedRequest);
 
-    setSelectedRequest(updatedRequest);
-    setActionModal(null);
-    setProcessingAction(false);
-    setRejectionReason("");
+        setVerificationRequests((currentRequests) =>
+          currentRequests.map((request) =>
+            request.id === updatedRequest.id ? updatedRequest : request
+          )
+        );
+      } else {
+        await loadVerificationRequests();
+        setSelectedRequest((current) =>
+          current
+            ? {
+                ...current,
+                status: "Approved",
+                rejectionReason: null,
+              }
+            : current
+        );
+      }
 
-    setFeedback({
-      type: "success",
-      message: `${selectedRequest.name}'s verification request has been approved.`,
-    });
+      setShowRejectForm(false);
+      setRejectionReason("");
+    } catch (err) {
+      console.error("Failed to approve verification:", err);
+
+      setActionError(
+        err?.data?.message ||
+          "Unable to approve this verification request. Please try again."
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleReject = async () => {
-    const trimmedReason = rejectionReason.trim();
-
-    if (
-      !selectedRequest ||
-      selectedRequest.status !== "Pending" ||
-      !trimmedReason
-    ) {
+    if (!selectedRequest || selectedRequest.status !== "Pending") {
       return;
     }
 
-    setProcessingAction(true);
+    const trimmedReason = rejectionReason.trim();
 
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    if (!trimmedReason) {
+      setActionError("Please provide a rejection reason.");
+      return;
+    }
 
-    const updatedRequest = {
-      ...selectedRequest,
-      status: "Rejected",
-      rejectionReason: trimmedReason,
-    };
+    setIsProcessing(true);
+    setActionError("");
 
-    setVerificationRequests((currentRequests) =>
-      currentRequests.map((request) =>
-        request.id === selectedRequest.id
-          ? updatedRequest
-          : request
-      )
-    );
+    try {
+      const response = await apiRequest(
+        `/v1/admin/verifications/${selectedRequest.id}/reject`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            rejection_reason: trimmedReason,
+          }),
+        }
+      );
 
-    setSelectedRequest(updatedRequest);
-    setActionModal(null);
-    setProcessingAction(false);
-    setRejectionReason("");
+      if (response?.data) {
+        const updatedRequest = normalizeVerification(response.data);
 
-    setFeedback({
-      type: "success",
-      message: `${selectedRequest.name}'s verification request has been rejected.`,
-    });
+        setSelectedRequest(updatedRequest);
+
+        setVerificationRequests((currentRequests) =>
+          currentRequests.map((request) =>
+            request.id === updatedRequest.id ? updatedRequest : request
+          )
+        );
+      } else {
+        await loadVerificationRequests();
+
+        setSelectedRequest((current) =>
+          current
+            ? {
+                ...current,
+                status: "Rejected",
+                rejectionReason: trimmedReason,
+              }
+            : current
+        );
+      }
+
+      setShowRejectForm(false);
+      setRejectionReason("");
+    } catch (err) {
+      console.error("Failed to reject verification:", err);
+
+      setActionError(
+        err?.data?.message ||
+          "Unable to reject this verification request. Please try again."
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   };
+
+  useEffect(() => {
+    return () => {
+      if (idCardUrl) {
+        URL.revokeObjectURL(idCardUrl);
+      }
+    };
+  }, [idCardUrl]);
 
   /*
    * --------------------------------------------------------------------------
@@ -474,38 +483,6 @@ export default function VerificationDashboard() {
   if (selectedRequest) {
     return (
       <div className="mx-auto w-full max-w-[1400px] space-y-6">
-        {/* Feedback */}
-        {feedback && (
-          <div
-            className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700"
-            role="status"
-          >
-            <CheckCircle2
-              size={17}
-              className="mt-0.5 shrink-0"
-            />
-
-            <div className="flex-1">
-              <p className="text-xs font-bold">
-                Verification updated
-              </p>
-
-              <p className="mt-0.5 text-xs leading-5">
-                {feedback.message}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setFeedback(null)}
-              className="shrink-0 rounded-lg p-1 transition hover:bg-emerald-100"
-              aria-label="Dismiss notification"
-            >
-              <X size={15} />
-            </button>
-          </div>
-        )}
-
         {/* Back Button */}
         <button
           type="button"
@@ -537,6 +514,22 @@ export default function VerificationDashboard() {
           <StatusBadge status={selectedRequest.status} />
         </div>
 
+        {/* Loading Details */}
+        {isLoadingDetails && (
+          <div className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
+            <Loader2 size={16} className="animate-spin" />
+            Loading verification details...
+          </div>
+        )}
+
+        {/* Action Error */}
+        {actionError && (
+          <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <AlertCircle size={17} className="mt-0.5 shrink-0" />
+            <span>{actionError}</span>
+          </div>
+        )}
+
         {/* Main Detail Layout */}
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           {/* ID Card Preview */}
@@ -555,32 +548,61 @@ export default function VerificationDashboard() {
               <button
                 type="button"
                 onClick={() => setIsImageExpanded(true)}
-                className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                disabled={!idCardUrl}
+                className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Maximize2 size={14} />
-
-                <span className="hidden sm:inline">
-                  Expand
-                </span>
+                <span className="hidden sm:inline">Expand</span>
               </button>
             </div>
 
             <div className="mt-5 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-page)]">
-              <button
-                type="button"
-                onClick={() => setIsImageExpanded(true)}
-                className="group block w-full cursor-zoom-in"
-              >
-                <img
-                  src={selectedRequest.idCard}
-                  alt={`${selectedRequest.name} university ID card`}
-                  className="h-auto max-h-[620px] w-full object-contain transition duration-300 group-hover:scale-[1.01]"
-                />
-              </button>
+              {idCardUrl ? (
+                <button
+                  type="button"
+                  onClick={() => setIsImageExpanded(true)}
+                  className="group block w-full cursor-zoom-in"
+                >
+                  <img
+                    src={idCardUrl}
+                    alt={`${selectedRequest.name} university ID card`}
+                    className="h-auto max-h-[620px] w-full object-contain transition duration-300 group-hover:scale-[1.01]"
+                  />
+                </button>
+              ) : (
+                <div className="flex min-h-[300px] flex-col items-center justify-center px-6 text-center">
+                  {isLoadingDetails ? (
+                    <>
+                      <Loader2
+                        size={24}
+                        className="animate-spin text-indigo-600"
+                      />
+                      <p className="mt-3 text-sm font-semibold text-[var(--text-primary)]">
+                        Loading ID card...
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--bg-page)] text-[var(--text-muted)]">
+                        <AlertCircle size={20} />
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-[var(--text-primary)]">
+                        ID card unavailable
+                      </p>
+                      <p className="mt-1 max-w-sm text-xs text-[var(--text-muted)]">
+                        The uploaded identification document could not be
+                        loaded.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <p className="mt-3 text-center text-[10px] text-[var(--text-muted)]">
-              Click the image or Expand to view the ID card.
+              {idCardUrl
+                ? "Click the image or Expand to view the ID card."
+                : "No ID card preview is currently available."}
             </p>
           </section>
 
@@ -633,10 +655,17 @@ export default function VerificationDashboard() {
                   label="Status"
                   value={selectedRequest.status}
                 />
+
+                {selectedRequest.reviewedAt !== "—" && (
+                  <DetailItem
+                    icon={CalendarDays}
+                    label="Reviewed"
+                    value={selectedRequest.reviewedAt}
+                  />
+                )}
               </div>
             </section>
 
-            {/* Rejection Reason */}
             {selectedRequest.status === "Rejected" &&
               selectedRequest.rejectionReason && (
                 <section className="rounded-2xl border border-rose-200 bg-rose-50 p-5">
@@ -664,53 +693,101 @@ export default function VerificationDashboard() {
                 Review the request before taking an action.
               </p>
 
-              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-1">
-                <button
-                  type="button"
-                  onClick={openApproveModal}
-                  disabled={
-                    selectedRequest.status !== "Pending"
-                  }
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <CheckCircle2 size={15} />
-                  Approve
-                </button>
+              {selectedRequest.status === "Pending" ? (
+                <>
+                  <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                    <button
+                      type="button"
+                      onClick={handleApprove}
+                      disabled={isProcessing}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isProcessing ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={15} />
+                      )}
+                      {isProcessing ? "Processing..." : "Approve"}
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={openRejectModal}
-                  disabled={
-                    selectedRequest.status !== "Pending"
-                  }
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <XCircle size={15} />
-                  Reject
-                </button>
-              </div>
-
-              {selectedRequest.status !== "Pending" && (
-                <div className="mt-3 rounded-xl bg-[var(--bg-page)] p-3">
-                  <div className="flex items-start gap-2">
-                    <ShieldCheck
-                      size={14}
-                      className="mt-0.5 shrink-0 text-[var(--text-muted)]"
-                    />
-
-                    <p className="text-[10px] leading-4 text-[var(--text-muted)]">
-                      This request has already been reviewed.
-                      Verification actions are unavailable.
-                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowRejectForm((current) => !current);
+                        setActionError("");
+                      }}
+                      disabled={isProcessing}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <XCircle size={15} />
+                      Reject
+                    </button>
                   </div>
-                </div>
+
+                  {showRejectForm && (
+                    <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50/60 p-4">
+                      <label
+                        htmlFor="rejection-reason"
+                        className="text-xs font-bold text-rose-800"
+                      >
+                        Rejection Reason
+                      </label>
+
+                      <textarea
+                        id="rejection-reason"
+                        value={rejectionReason}
+                        onChange={(event) =>
+                          setRejectionReason(event.target.value)
+                        }
+                        placeholder="Explain why this verification request is being rejected..."
+                        rows={4}
+                        disabled={isProcessing}
+                        className="mt-2 w-full resize-none rounded-xl border border-rose-200 bg-white px-3 py-2.5 text-xs text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-rose-300 focus:ring-2 focus:ring-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      />
+
+                      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowRejectForm(false);
+                            setRejectionReason("");
+                            setActionError("");
+                          }}
+                          disabled={isProcessing}
+                          className="h-9 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 text-xs font-bold text-[var(--text-secondary)] transition hover:bg-[var(--bg-page)] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleReject}
+                          disabled={
+                            isProcessing || !rejectionReason.trim()
+                          }
+                          className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-xs font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isProcessing && (
+                            <Loader2 size={14} className="animate-spin" />
+                          )}
+                          Confirm Rejection
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="mt-4 rounded-xl bg-[var(--bg-page)] p-3 text-[10px] leading-4 text-[var(--text-muted)]">
+                  This request has already been reviewed. Verification actions
+                  are unavailable.
+                </p>
               )}
             </section>
           </aside>
         </div>
 
         {/* Expanded Image Modal */}
-        {isImageExpanded && (
+        {isImageExpanded && idCardUrl && (
           <div
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
             onClick={() => setIsImageExpanded(false)}
@@ -720,7 +797,7 @@ export default function VerificationDashboard() {
               onClick={(event) => event.stopPropagation()}
             >
               <img
-                src={selectedRequest.idCard}
+                src={idCardUrl}
                 alt={`${selectedRequest.name} university ID card enlarged`}
                 className="max-h-[90vh] max-w-full rounded-2xl object-contain shadow-2xl"
               />
@@ -731,27 +808,10 @@ export default function VerificationDashboard() {
                 className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
                 aria-label="Close ID card preview"
               >
-                <X size={18} />
+                <XCircle size={18} />
               </button>
             </div>
           </div>
-        )}
-
-        {/* Action Modal */}
-        {actionModal && (
-          <ActionModal
-            type={actionModal}
-            request={selectedRequest}
-            rejectionReason={rejectionReason}
-            setRejectionReason={setRejectionReason}
-            onCancel={closeActionModal}
-            onConfirm={
-              actionModal === "approve"
-                ? handleApprove
-                : handleReject
-            }
-            processing={processingAction}
-          />
         )}
       </div>
     );
@@ -765,38 +825,6 @@ export default function VerificationDashboard() {
 
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-6">
-      {/* Feedback */}
-      {feedback && (
-        <div
-          className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700"
-          role="status"
-        >
-          <CheckCircle2
-            size={17}
-            className="mt-0.5 shrink-0"
-          />
-
-          <div className="flex-1">
-            <p className="text-xs font-bold">
-              Verification updated
-            </p>
-
-            <p className="mt-0.5 text-xs leading-5">
-              {feedback.message}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setFeedback(null)}
-            className="shrink-0 rounded-lg p-1 transition hover:bg-emerald-100"
-            aria-label="Dismiss notification"
-          >
-            <X size={15} />
-          </button>
-        </div>
-      )}
-
       {/* Page Heading */}
       <div>
         <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-600">
@@ -809,34 +837,52 @@ export default function VerificationDashboard() {
         </h2>
 
         <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-          Review and manage Student and Faculty/Supervisor role
-          verification requests submitted by users.
+          Review and manage Student and Faculty/Supervisor role verification
+          requests submitted by users.
         </p>
       </div>
+
+      {/* Loading Error */}
+      {error && (
+        <div className="flex items-start justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+          <div className="flex items-start gap-2 text-sm text-rose-700">
+            <AlertCircle size={17} className="mt-0.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={loadVerificationRequests}
+            className="shrink-0 text-xs font-bold text-rose-700 underline underline-offset-2 hover:text-rose-900"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <SummaryCard
           label="Total Requests"
-          value={totalRequests}
+          value={isLoading ? "—" : totalRequests}
           icon={ShieldCheck}
         />
 
         <SummaryCard
           label="Pending"
-          value={pendingRequests}
+          value={isLoading ? "—" : pendingRequests}
           icon={Clock3}
         />
 
         <SummaryCard
           label="Approved"
-          value={approvedRequests}
+          value={isLoading ? "—" : approvedRequests}
           icon={CheckCircle2}
         />
 
         <SummaryCard
           label="Rejected"
-          value={rejectedRequests}
+          value={isLoading ? "—" : rejectedRequests}
           icon={XCircle}
         />
       </div>
@@ -854,9 +900,7 @@ export default function VerificationDashboard() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(event) =>
-                setSearchQuery(event.target.value)
-              }
+              onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search by name or email..."
               className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-page)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
             />
@@ -872,9 +916,7 @@ export default function VerificationDashboard() {
 
               <select
                 value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(event.target.value)
-                }
+                onChange={(event) => setStatusFilter(event.target.value)}
                 className="h-10 w-full appearance-none rounded-xl border border-[var(--border)] bg-[var(--bg-page)] pl-9 pr-9 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 sm:w-[150px]"
               >
                 <option value="All">All Statuses</option>
@@ -892,9 +934,7 @@ export default function VerificationDashboard() {
             <div className="relative">
               <select
                 value={roleFilter}
-                onChange={(event) =>
-                  setRoleFilter(event.target.value)
-                }
+                onChange={(event) => setRoleFilter(event.target.value)}
                 className="h-10 w-full appearance-none rounded-xl border border-[var(--border)] bg-[var(--bg-page)] px-3 pr-9 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 sm:w-[180px]"
               >
                 <option value="All">All Roles</option>
@@ -915,42 +955,116 @@ export default function VerificationDashboard() {
 
       {/* Request List */}
       <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-sm">
-        {/* Desktop Table */}
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[800px]">
-            <thead>
-              <tr className="border-b border-[var(--border)] bg-[var(--bg-page)]/70">
-                <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                  User
-                </th>
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex min-h-[320px] flex-col items-center justify-center px-6 text-center">
+            <Loader2 size={28} className="animate-spin text-indigo-600" />
 
-                <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                  Role
-                </th>
+            <h3 className="mt-4 text-sm font-bold text-[var(--text-primary)]">
+              Loading verification requests...
+            </h3>
 
-                <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                  Submitted
-                </th>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              Retrieving the latest requests from the server.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr className="border-b border-[var(--border)] bg-[var(--bg-page)]/70">
+                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      User
+                    </th>
 
-                <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                  Status
-                </th>
+                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      Role
+                    </th>
 
-                <th className="px-5 py-3 text-right text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                  Action
-                </th>
-              </tr>
-            </thead>
+                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      Submitted
+                    </th>
 
-            <tbody>
+                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      Status
+                    </th>
+
+                    <th className="px-5 py-3 text-right text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filteredRequests.map((request) => (
+                    <tr
+                      key={request.id}
+                      className="border-b border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--bg-page)]/60"
+                    >
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xs font-extrabold text-indigo-600">
+                            {request.name
+                              .split(" ")
+                              .map((part) => part[0])
+                              .join("")
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-[var(--text-primary)]">
+                              {request.name}
+                            </p>
+
+                            <p className="truncate text-xs text-[var(--text-muted)]">
+                              {request.email}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <span className="text-sm font-medium text-[var(--text-secondary)]">
+                          {request.role}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <span className="text-sm text-[var(--text-secondary)]">
+                          {request.submittedAt}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <StatusBadge status={request.status} />
+                      </td>
+
+                      <td className="px-5 py-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleViewRequest(request)}
+                          className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                        >
+                          <Eye size={14} />
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="divide-y divide-[var(--border)] md:hidden">
               {filteredRequests.map((request) => (
-                <tr
-                  key={request.id}
-                  className="border-b border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--bg-page)]/60"
-                >
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xs font-extrabold text-indigo-600">
+                <div key={request.id} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xs font-extrabold text-indigo-600">
                         {request.name
                           .split(" ")
                           .map((part) => part[0])
@@ -969,129 +1083,63 @@ export default function VerificationDashboard() {
                         </p>
                       </div>
                     </div>
-                  </td>
 
-                  <td className="px-5 py-4">
-                    <span className="text-sm font-medium text-[var(--text-secondary)]">
-                      {request.role}
-                    </span>
-                  </td>
-
-                  <td className="px-5 py-4">
-                    <span className="text-sm text-[var(--text-secondary)]">
-                      {request.submittedAt}
-                    </span>
-                  </td>
-
-                  <td className="px-5 py-4">
                     <StatusBadge status={request.status} />
-                  </td>
+                  </div>
 
-                  <td className="px-5 py-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => handleViewRequest(request)}
-                      className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
-                    >
-                      <Eye size={14} />
-                      View
-                    </button>
-                  </td>
-                </tr>
+                  <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-[var(--bg-page)] p-3">
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                        Role
+                      </p>
+
+                      <p className="mt-1 text-xs font-semibold text-[var(--text-secondary)]">
+                        {request.role}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                        Submitted
+                      </p>
+
+                      <p className="mt-1 text-xs font-semibold text-[var(--text-secondary)]">
+                        {request.submittedAt}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleViewRequest(request)}
+                    className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] text-xs font-bold text-[var(--text-primary)] transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                  >
+                    <Eye size={14} />
+                    View Request
+                  </button>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Cards */}
-        <div className="divide-y divide-[var(--border)] md:hidden">
-          {filteredRequests.map((request) => (
-            <div key={request.id} className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xs font-extrabold text-indigo-600">
-                    {request.name
-                      .split(" ")
-                      .map((part) => part[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase()}
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-[var(--text-primary)]">
-                      {request.name}
-                    </p>
-
-                    <p className="truncate text-xs text-[var(--text-muted)]">
-                      {request.email}
-                    </p>
-                  </div>
-                </div>
-
-                <StatusBadge status={request.status} />
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-[var(--bg-page)] p-3">
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-                    Role
-                  </p>
-
-                  <p className="mt-1 text-xs font-semibold text-[var(--text-secondary)]">
-                    {request.role}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-                    Submitted
-                  </p>
-
-                  <p className="mt-1 text-xs font-semibold text-[var(--text-secondary)]">
-                    {request.submittedAt}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleViewRequest(request)}
-                className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-page)] text-xs font-bold text-[var(--text-primary)] transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
-              >
-                <Eye size={14} />
-                View Request
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredRequests.length === 0 && (
-          <div className="flex min-h-[280px] flex-col items-center justify-center px-6 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--bg-page)] text-[var(--text-muted)]">
-              <Search size={20} />
             </div>
 
-            <h3 className="mt-4 text-sm font-bold text-[var(--text-primary)]">
-              No verification requests found
-            </h3>
+            {/* Empty State */}
+            {filteredRequests.length === 0 && (
+              <div className="flex min-h-[280px] flex-col items-center justify-center px-6 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--bg-page)] text-[var(--text-muted)]">
+                  <Search size={20} />
+                </div>
 
-            <p className="mt-1 max-w-sm text-xs text-[var(--text-muted)]">
-              Try adjusting your search or filter to find a
-              verification request.
-            </p>
-          </div>
+                <h3 className="mt-4 text-sm font-bold text-[var(--text-primary)]">
+                  No verification requests found
+                </h3>
+
+                <p className="mt-1 max-w-sm text-xs text-[var(--text-muted)]">
+                  Try adjusting your search or filter to find a verification
+                  request.
+                </p>
+              </div>
+            )}
+          </>
         )}
-      </div>
-
-      {/* Mock Data Notice */}
-      <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/50 px-4 py-3">
-        <p className="text-xs text-indigo-700">
-          <span className="font-bold">Development mode:</span>{" "}
-          Verification requests are currently using mock data. This
-          interface is structured for future Admin API integration.
-        </p>
       </div>
     </div>
   );
