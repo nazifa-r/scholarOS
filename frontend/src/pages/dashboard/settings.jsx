@@ -67,7 +67,7 @@ export default function Settings() {
             Account & Security
           </h2>
 
-          <div className="mt-5 grid grid-cols-2 gap-5">
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
             <label className="block">
               <span className="mb-2 block text-xs font-bold text-[var(--text-primary)]">
                 Email Address
@@ -135,7 +135,7 @@ export default function Settings() {
           <h2 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
             Theme
           </h2>
-          <div className="mt-5 flex gap-3">
+          <div className="mt-5 flex flex-wrap gap-3">
             <ThemeButton
               label="Light"
               icon={<Sun size={18} />}
@@ -246,7 +246,7 @@ export default function Settings() {
             Preferences
           </h2>
 
-          <div className="mt-5 grid grid-cols-2 gap-5">
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
             <label className="block">
               <span className="mb-2 block text-xs font-bold text-[var(--text-primary)]">
                 Language
@@ -288,7 +288,7 @@ export default function Settings() {
             Deactivate Account
           </h2>
 
-          <div className="mt-5 flex items-center justify-between">
+          <div className="mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="text-sm font-bold text-red-500">
                 Deactivate my account
@@ -301,14 +301,14 @@ export default function Settings() {
             <button
               type="button"
               onClick={() => setIsDeactivateModalOpen(true)}
-              className="h-10 rounded-xl border border-[var(--error)]/30 bg-[var(--error-bg)] px-5 text-sm font-bold text-[var(--error)] transition-colors"
+              className="h-10 shrink-0 rounded-xl border border-[var(--error)]/30 bg-[var(--error-bg)] px-5 text-sm font-bold text-[var(--error)] transition-colors"
             >
               Deactivate
             </button>
           </div>
         </section>
 
-        <div className="flex justify-end gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={() => navigate("/dashboard")}

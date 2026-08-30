@@ -68,7 +68,8 @@ export default function DashboardShell() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex text-[var(--text-primary)]">
-      <aside className="w-[260px] shrink-0 bg-[var(--bg-sidebar)] text-white flex flex-col h-screen sticky top-0 overflow-hidden">
+      {/* Desktop Sidebar - hidden on mobile */}
+      <aside className="hidden lg:flex w-[260px] shrink-0 bg-[var(--bg-sidebar)] text-white flex-col h-screen sticky top-0 overflow-hidden">
         <div className="px-6 pt-7 pb-5">
           <Link to="/" className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-linear-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
@@ -196,16 +197,17 @@ export default function DashboardShell() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto relative">
-        <header className="sticky top-0 z-30 px-8 py-5 flex items-center justify-between bg-[var(--bg-surface)] backdrop-blur-xl border-b border-[var(--border)]">
-          <div className="text-xs text-[var(--text-muted)] font-medium">
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto relative min-w-0">
+        <header className="sticky top-0 z-30 px-4 sm:px-6 lg:px-8 py-4 lg:py-5 flex items-center justify-between gap-3 bg-[var(--bg-surface)] backdrop-blur-xl border-b border-[var(--border)]">
+          <div className="hidden sm:block text-xs text-[var(--text-muted)] font-medium shrink-0">
             Home /{" "}
             <span className="text-[var(--text-primary)] font-semibold">
               {getBreadcrumbTitle(location.pathname)}
             </span>
           </div>
 
-          <div className="flex-1 max-w-xl mx-6">
+          <div className="flex-1 max-w-xl sm:mx-6 pl-14 lg:pl-0">
             <div className="relative">
               <Search
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
@@ -219,7 +221,7 @@ export default function DashboardShell() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 relative">
+          <div className="flex items-center gap-4 relative shrink-0">
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => {
@@ -243,7 +245,7 @@ export default function DashboardShell() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -5 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 w-72 bg-[var(--bg-surface)] rounded-2xl shadow-xl border border-[var(--border)] p-4 z-40"
+                    className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] max-w-[320px] sm:w-72 bg-[var(--surface-4)] rounded-2xl shadow-xl border border-[var(--border)] p-4 z-40"
                   >
                     <div className="text-sm font-bold text-[var(--text-primary)] mb-3">
                       Notifications
@@ -281,12 +283,12 @@ export default function DashboardShell() {
 
             <Link
               to="/dashboard/profile"
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity shrink-0"
             >
-              <div className="h-10 w-10 rounded-full bg-linear-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center shadow-md shadow-indigo-400/20 text-sm font-bold">
+              <div className="h-10 w-10 rounded-full bg-linear-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center shadow-md shadow-indigo-400/20 text-sm font-bold shrink-0">
                 LM
               </div>
-              <div className="pl-1">
+              <div className="hidden sm:block pl-1">
                 <div className="text-sm font-bold text-[var(--text-primary)] leading-tight">
                   Leila Morgan
                 </div>
@@ -299,15 +301,16 @@ export default function DashboardShell() {
           </div>
         </header>
 
-        <div className="px-8 py-7 space-y-7 max-w-7xl mx-auto">
+        <div className="px-4 sm:px-6 lg:px-8 py-5 lg:py-7 space-y-6 lg:space-y-7 max-w-7xl mx-auto">
           <Outlet />
         </div>
 
+        {/* Floating Mobile Menu Button */}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="fixed bottom-6 left-6 z-40 lg:hidden inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--bg-sidebar)] text-white shadow-xl"
+          className="fixed top-4 left-4 z-40 lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bg-sidebar)] text-white shadow-xl"
         >
-          <Menu size={20} />
+          <Menu size={18} />
         </button>
 
         <AnimatePresence>

@@ -201,20 +201,20 @@ export default function RoleSetup() {
     const isRejected = verificationStatus === "rejected";
     const isPending = verificationStatus === "pending";
     return (
-      <div className={cn("mt-5 rounded-xl border p-3", isApproved && "border-green-200 bg-green-50", isRejected && "border-red-200 bg-red-50", isPending && "border-amber-200 bg-amber-50")}>
+      <div className={cn("mt-5 rounded-xl border p-3", isApproved && "border-[var(--success)]/30 bg-[var(--success-bg)]", isRejected && "border-[var(--error)]/30 bg-[var(--error-bg)]", isPending && "border-[var(--warning)]/30 bg-[var(--warning-bg)]")}>
         <div className="flex items-start gap-3">
-          <div className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full", isApproved && "bg-green-100 text-green-700", isRejected && "bg-red-100 text-red-700", isPending && "bg-amber-100 text-amber-700")}>
+          <div className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full", isApproved && "bg-[var(--success-bg)] text-[var(--success)]", isRejected && "bg-[var(--error-bg)] text-[var(--error)]", isPending && "bg-[var(--warning-bg)] text-[var(--warning)]")}>
             {isApproved && <Check className="h-4 w-4" />}
             {isRejected && <X className="h-4 w-4" />}
             {isPending && <ShieldCheck className="h-4 w-4" />}
           </div>
           <div className="min-w-0 flex-1">
-            <p className={cn("font-semibold", isApproved && "text-green-800", isRejected && "text-red-800", isPending && "text-amber-800")}>{currentStatus.label}</p>
-            <p className={cn("mt-1 text-sm", isApproved && "text-green-700", isRejected && "text-red-700", isPending && "text-amber-700")}>{currentStatus.description}</p>
+            <p className={cn("font-semibold", isApproved && "text-[var(--success)]", isRejected && "text-[var(--error)]", isPending && "text-[var(--warning)]")}>{currentStatus.label}</p>
+            <p className={cn("mt-1 text-sm", isApproved && "text-[var(--text-secondary)]", isRejected && "text-[var(--text-secondary)]", isPending && "text-[var(--text-secondary)]")}>{currentStatus.description}</p>
             {isRejected && rejectionReason && (
-              <div className="mt-3 rounded-lg border border-red-200 bg-white/60 p-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-red-600">Rejection reason</p>
-                <p className="mt-1 text-sm leading-5 text-red-700">{rejectionReason}</p>
+              <div className="mt-3 rounded-lg border border-[var(--error)]/30 bg-[var(--bg-surface)] p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--error)]">Rejection reason</p>
+                <p className="mt-1 text-sm leading-5 text-[var(--error)]">{rejectionReason}</p>
               </div>
             )}
             {isRejected && (
@@ -313,7 +313,7 @@ export default function RoleSetup() {
                       <Button type="button" variant="secondary" className="!px-3 !py-1.5 !text-xs" onClick={handleReplaceFile}>
                         <RotateCcw className="mr-2 h-3.5 w-3.5" /> Replace
                       </Button>
-                      <button type="button" onClick={handleRemoveFile} className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] transition-colors hover:bg-red-50 hover:text-red-600">
+                      <button type="button" onClick={handleRemoveFile} className="inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] transition-colors hover:bg-[var(--error-bg)] hover:text-[var(--error)]">
                         <Trash2 className="mr-2 h-3.5 w-3.5" /> Remove
                       </button>
                     </div>
@@ -321,14 +321,14 @@ export default function RoleSetup() {
                 </div>
               </div>
             )}
-            {fileError && <p className="mt-2 text-sm font-medium text-red-600">{fileError}</p>}
+            {fileError && <p className="mt-2 text-sm font-medium text-[var(--error)]">{fileError}</p>}
             <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">Make sure the ID card is clear and all important information is readable. Do not upload unrelated documents.</p>
           </section>
         )}
 
         {renderStatus()}
-        {submitMessage && <div className="mt-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{submitMessage}</div>}
-        {submitError && <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{submitError}</div>}
+        {submitMessage && <div className="mt-3 rounded-xl border border-[var(--success)]/30 bg-[var(--success-bg)] px-4 py-3 text-sm text-[var(--success)]">{submitMessage}</div>}
+        {submitError && <div className="mt-3 rounded-xl border border-[var(--error)]/30 bg-[var(--error-bg)] px-4 py-3 text-sm text-[var(--error)]">{submitError}</div>}
 
         {verificationStatus === "not_submitted" && (
           <div className="mt-5">
@@ -340,9 +340,9 @@ export default function RoleSetup() {
         )}
 
         {verificationStatus === "pending" && (
-          <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50/50 p-3">
+          <div className="mt-5 rounded-xl border border-[var(--badge-blue-text)]/30 bg-[var(--badge-blue)] p-3">
             <div className="flex items-center gap-3">
-              <ShieldCheck className="h-5 w-5 text-blue-600" />
+              <ShieldCheck className="h-5 w-5 text-[var(--badge-blue-text)]" />
               <div className="flex-1">
                 <p className="font-medium text-[var(--text-primary)]">Verification request submitted</p>
                 <p className="text-sm text-[var(--text-secondary)]">Your request is under review. You can continue using ScholarOS while verification is pending.</p>

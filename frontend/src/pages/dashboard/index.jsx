@@ -213,7 +213,8 @@ export default function Overview() {
 
       {renderVerificationStatus()}
 
-      <div className="grid grid-cols-4 gap-5 mt-7">
+      {/* Stat Cards - Responsive Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mt-7">
         {stats.map((s) => (
           <motion.div key={s.label} whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.98 }} className="glass-panel rounded-3xl p-6 transition-all duration-200">
             <div className="flex items-start justify-between mb-4">
@@ -230,7 +231,8 @@ export default function Overview() {
         ))}
       </div>
 
-      <div className="grid grid-cols-[1fr_380px] gap-5 mt-7">
+      {/* Recent Papers + Priority Tasks - Responsive Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5 mt-7">
         <div className="glass-panel rounded-[28px] p-8">
           <div className="flex items-center justify-between mb-6 relative" ref={filterRef}>
             <div>
@@ -317,19 +319,20 @@ export default function Overview() {
         </div>
       </div>
 
+      {/* Insight Card - Responsive */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-[28px] bg-gradient-to-r from-[var(--bg-sidebar)] via-[var(--bg-surface)] to-[var(--bg-sidebar)] text-white p-8 shadow-2xl shadow-indigo-900/20 relative overflow-hidden mt-7">
         <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
         <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
-        <div className="relative z-10 flex items-start gap-6">
+        <div className="relative z-10 flex flex-col sm:flex-row items-start gap-6">
           <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-400 to-violet-400 flex items-center justify-center shadow-xl shadow-indigo-400/20 shrink-0">
             <Sparkles size={24} className="text-white" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="text-[10px] font-bold tracking-[0.15em] text-indigo-300 uppercase mb-1.5">ScholarOS Insight</div>
             <h3 className="text-xl font-extrabold tracking-tight mb-2">Your reviewer turnaround is accelerating.</h3>
             <p className="text-sm text-slate-300 leading-relaxed max-w-2xl">Teams using structured paper threads and visible milestone ownership are closing feedback loops 3x faster.</p>
           </div>
-          <button className="self-center shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+          <button className="w-full sm:w-auto self-start sm:self-center shrink-0 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all">
             View Analytics <ArrowRight size={16} />
           </button>
         </div>
