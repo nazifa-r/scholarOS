@@ -5,31 +5,28 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Task extends Model
+class Milestone extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'project_id',
-        'assigned_to',
-        'assigned_by',
-        'created_by',
-        'name',
+        'title',
         'description',
-        'priority',
         'status',
-        'deadline',
+        'due_date',
         'completed_at',
+        'order',
     ];
 
     protected $casts = [
-        'deadline' => 'date',
-        'completed_at' => 'datetime',
+        'due_date' => 'date',
+        'completed_at' => 'date',
     ];
 
     protected $attributes = [
-        'priority' => 'medium',
         'status' => 'pending',
+        'order' => 0,
     ];
 
     // ============================================
@@ -39,26 +36,6 @@ class Task extends Model
     public function project()
     {
         return $this->belongsTo(Project::class);
-    }
-
-    public function assignedTo()
-    {
-        return $this->belongsTo(User::class, 'assigned_to');
-    }
-
-    public function assignedBy()
-    {
-        return $this->belongsTo(User::class, 'assigned_by');
-    }
-
-    public function createdBy()
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function files()
-    {
-        return $this->hasMany(File::class);
     }
 
     // ============================================
@@ -85,33 +62,6 @@ class Task extends Model
         return $colors[$this->status] ?? 'gray';
     }
 
-    public function getPriorityLabelAttribute(): string
-    {
-        $labels = [
-            'low' => 'Low',
-            'medium' => 'Medium',
-            'high' => 'High',
-            'urgent' => 'Urgent',
-        ];
-        return $labels[$this->priority] ?? 'Medium';
-    }
-
-    public function getPriorityColorAttribute(): string
-    {
-        $colors = [
-            'low' => 'blue',
-            'medium' => 'yellow',
-            'high' => 'orange',
-            'urgent' => 'red',
-        ];
-        return $colors[$this->priority] ?? 'gray';
-    }
-
-    public function getIsOverdueAttribute(): bool
-    {
-        return $this->deadline && $this->deadline < now() && $this->status !== 'completed';
-    }
-
     public function getIsCompletedAttribute(): bool
     {
         return $this->status === 'completed';
@@ -136,25 +86,15 @@ class Task extends Model
         return $query->where('status', 'completed');
     }
 
+    public function scopeUpcoming($query)
+    {
+        return $query->where('due_date', '>=', now());
+    }
+
     public function scopeOverdue($query)
     {
-        return $query->where('deadline', '<', now())
+        return $query->where('due_date', '<', now())
                      ->where('status', '!=', 'completed');
-    }
-
-    public function scopeForProject($query, int $projectId)
-    {
-        return $query->where('project_id', $projectId);
-    }
-
-    public function scopeAssignedTo($query, int $userId)
-    {
-        return $query->where('assigned_to', $userId);
-    }
-
-    public function scopeByPriority($query, string $priority)
-    {
-        return $query->where('priority', $priority);
     }
 
     // ============================================
@@ -180,5 +120,10 @@ class Task extends Model
         $this->status = 'pending';
         $this->completed_at = null;
         return $this->save();
+    }
+
+    public function isOverdue(): bool
+    {
+        return $this->due_date < now() && $this->status !== 'completed';
     }
 }
