@@ -119,15 +119,56 @@ export default function ProfilePage() {
 
     const loadProfile = async () => {
       try {
-        const [profileResponse, verificationResponse] = await Promise.all([
-          apiRequest("/v1/user"),
-          apiRequest("/v1/role-verification"),
-        ]);
+        /*
+         * Use Promise.allSettled instead of Promise.all.
+         *
+         * /v1/user contains the actual profile information and should
+         * load independently from the role verification endpoint.
+         *
+         * If role verification fails, the user's profile should still
+         * be displayed.
+         */
+        const [profileResult, verificationResult] =
+          await Promise.allSettled([
+            apiRequest("/v1/user"),
+            apiRequest("/v1/role-verification"),
+          ]);
 
         if (!isMounted) return;
 
-        setUser(profileResponse?.data || null);
-        setVerification(verificationResponse?.data || null);
+        // -------------------------------------------------------------
+        // USER PROFILE
+        // -------------------------------------------------------------
+        if (profileResult.status === "fulfilled") {
+          setUser(profileResult.value?.data || null);
+          setError("");
+        } else {
+          console.error(
+            "Unable to load user profile:",
+            profileResult.reason
+          );
+
+          setError("Unable to load profile information.");
+        }
+
+        // -------------------------------------------------------------
+        // ROLE VERIFICATION
+        // -------------------------------------------------------------
+        if (verificationResult.status === "fulfilled") {
+          setVerification(verificationResult.value?.data || null);
+        } else {
+          /*
+           * Role verification is optional for displaying the rest
+           * of the profile. Do not allow its failure to break
+           * profile loading.
+           */
+          console.warn(
+            "Unable to load role verification:",
+            verificationResult.reason
+          );
+
+          setVerification(null);
+        }
       } catch (requestError) {
         if (!isMounted) return;
 
@@ -171,11 +212,23 @@ export default function ProfilePage() {
 
   const institution = user?.institution || "Institution not provided";
 
+  /*
+   * Research interests come from the existing backend
+   * research area relationship:
+   *
+   * user.research_areas
+   *
+   * Example backend response:
+   * research_areas: [
+   *   { id: 1, name: "Artificial Intelligence" },
+   *   { id: 4, name: "Computer Vision" }
+   * ]
+   */
   const interests = Array.isArray(user?.research_areas)
-  ? user.research_areas
-      .map((area) => area?.name)
-      .filter(Boolean)
-  : [];
+    ? user.research_areas
+        .map((area) => area?.name)
+        .filter(Boolean)
+    : [];
 
   const initials = getInitials(name);
 
@@ -408,8 +461,8 @@ export default function ProfilePage() {
                         </div>
 
                         <div className="mt-0.5 text-xs text-[var(--text-muted)]">
-                          {project.role} &middot; {project.members} members &middot;
-                          Due {project.due}
+                          {project.role} &middot; {project.members} members
+                          &middot; Due {project.due}
                         </div>
                       </div>
                     </div>
