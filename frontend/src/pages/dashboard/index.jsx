@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
@@ -13,44 +13,111 @@ import {
   Clock3,
   CheckCircle2,
   AlertCircle,
+  RotateCw,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import AnimatedCounter from "../../components/ui/AnimatedCounter.jsx";
 import { apiRequest } from "../../utils/api.js";
+import {
+  getDashboardStats,
+  getRecentActivity,
+  getDashboardPapers,
+  getDashboardProjects,
+  getProjectTasks,
+} from "../../services/dashboardService.js";
 
-const stats = [
-  { label: "RESEARCH PAPERS", value: 10204, suffix: "", sub: "Indexed across grants & labs.", icon: FileText },
-  { label: "ACTIVE RESEARCHERS", value: 1538, suffix: "", sub: "Faculty & collaborators in sync.", icon: Users },
-  { label: "LIVE PROJECTS", value: 352, suffix: "", sub: "Shared timelines & workflows.", icon: Layers },
-  { label: "DEPARTMENTS", value: 41, suffix: "", sub: "CS, medicine, engineering & more.", icon: Building2 },
-];
-
-const papers = [
-  { id: "RP-2048", tags: ["Environmental AI", "Peer Review"], title: "Adaptive Graph Models for Predictive Climate Resilience Planning", authors: "Dr. Leila Morgan · Aarav Patel · Sofia Chen", citations: 128, status: "Peer Review" },
-  { id: "RP-1872", tags: ["Health Informatics", "Ready to Publish"], title: "Federated Medical Imaging Pipelines for Cross-Institutional Diagnostics", authors: "Prof. Nadia Mensah · Jonas Richter", citations: 94, status: "Ready to Publish" },
-  { id: "RP-1664", tags: ["Research Systems", "Draft"], title: "Collaborative Knowledge Mapping in Multi-Disciplinary Research Teams", authors: "Elena Park · Samuel Okoye · Mina Ross", citations: 31, status: "Draft" },
-  { id: "RP-1530", tags: ["Cybersecurity", "In Revision"], title: "Quantum-Safe Identity Layers for Academic Infrastructure", authors: "Ibrahim Hassan · Dr. Yuki Sato", citations: 67, status: "In Revision" },
-];
-
-const tasks = [
-  { label: "Resolve peer review comments for federated imaging paper", meta: "Jonas Richter · Today, 4:00 PM" },
-  { label: "Finalize ethics appendix for BlueGrid Climate Archive", meta: "Dr. Leila Morgan · Tomorrow" },
-  { label: "Prepare collaborator invite list for Civic Insight Observatory", meta: "Mina Ross · May 21" },
-];
-
-const activities = [
-  { text: "Jonas Richter uploaded a new paper", meta: "Federated Imaging · 2m ago" },
-  { text: "Dr. Leila Morgan joined BlueGrid Archive", meta: "1h ago" },
-];
-
-const VERIFICATION_STATUS = { NOT_SUBMITTED: "not_submitted", PENDING: "pending", APPROVED: "approved", REJECTED: "rejected" };
+const VERIFICATION_STATUS = {
+  NOT_SUBMITTED: "not_submitted",
+  PENDING: "pending",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+};
 
 export default function Overview() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterBy, setFilterBy] = useState("All");
   const filterRef = useRef(null);
+
   const [verificationStatus, setVerificationStatus] = useState(VERIFICATION_STATUS.NOT_SUBMITTED);
   const [rejectionReason, setRejectionReason] = useState("");
   const [verificationLoading, setVerificationLoading] = useState(true);
+
+  const [statsData, setStatsData] = useState(null);
+  const [papersData, setPapersData] = useState([]);
+  const [tasksData, setTasksData] = useState([]);
+  const [activitiesData, setActivitiesData] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const currentUser = useMemo(() => {
+    try {
+      const stored = localStorage.getItem("scholaros_user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [statsRes, papersRes, activityRes, projectsRes] = await Promise.allSettled([
+        getDashboardStats(),
+        getDashboardPapers(),
+        getRecentActivity(),
+        getDashboardProjects({ per_page: 5 }),
+      ]);
+
+      if (statsRes.status === "fulfilled" && statsRes.value?.data) {
+        setStatsData(statsRes.value.data);
+      }
+
+      if (papersRes.status === "fulfilled" && papersRes.value?.data) {
+        const rawPapers = Array.isArray(papersRes.value.data)
+          ? papersRes.value.data
+          : papersRes.value.data?.data || [];
+        setPapersData(rawPapers);
+      }
+
+      if (activityRes.status === "fulfilled" && activityRes.value?.data) {
+        setActivitiesData(activityRes.value.data);
+      }
+
+      // Fetch tasks from user projects if available
+      if (projectsRes.status === "fulfilled" && projectsRes.value?.data) {
+        const projectList = Array.isArray(projectsRes.value.data)
+          ? projectsRes.value.data
+          : projectsRes.value.data?.data || [];
+        
+        if (projectList.length > 0) {
+          try {
+            const firstProject = projectList[0];
+            const tasksRes = await getProjectTasks(firstProject.id);
+            if (tasksRes?.data) {
+              const rawTasks = Array.isArray(tasksRes.data)
+                ? tasksRes.data
+                : tasksRes.data?.data || [];
+              setTasksData(rawTasks);
+            }
+          } catch {
+            setTasksData([]);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching overview data:", err);
+      setError(err?.data?.message || err?.message || "Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -75,32 +142,88 @@ export default function Overview() {
         const verification = response?.data;
         setVerificationStatus(verification?.status || VERIFICATION_STATUS.NOT_SUBMITTED);
         setRejectionReason(verification?.rejection_reason || "");
-      } catch (error) {
+      } catch (err) {
         if (!isMounted) return;
-        if (error?.status === 404) {
+        if (err?.status === 404) {
           setVerificationStatus(VERIFICATION_STATUS.NOT_SUBMITTED);
           setRejectionReason("");
         } else {
-          console.error("Unable to load role verification status:", error);
+          console.error("Unable to load role verification status:", err);
         }
       } finally {
         if (isMounted) setVerificationLoading(false);
       }
     };
     fetchVerificationStatus();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
+  const statsList = useMemo(() => {
+    const papersCount = statsData?.papers?.total ?? 0;
+    const activeProjectsCount = statsData?.projects?.active ?? statsData?.projects?.total ?? 0;
+    const tasksCount = statsData?.tasks?.total ?? 0;
+    const completedTasks = statsData?.tasks?.completed ?? 0;
+
+    return [
+      {
+        label: "RESEARCH PAPERS",
+        value: papersCount,
+        suffix: "",
+        sub: "Indexed across grants & labs.",
+        icon: FileText,
+      },
+      {
+        label: "ACTIVE PROJECTS",
+        value: activeProjectsCount,
+        suffix: "",
+        sub: "Shared timelines & workflows.",
+        icon: Layers,
+      },
+      {
+        label: "ASSIGNED TASKS",
+        value: tasksCount,
+        suffix: "",
+        sub: `${completedTasks} completed successfully.`,
+        icon: Users,
+      },
+      {
+        label: "UNREAD ALERTS",
+        value: statsData?.notifications?.unread ?? 0,
+        suffix: "",
+        sub: "Pending review notes & tasks.",
+        icon: Building2,
+      },
+    ];
+  }, [statsData]);
+
   const filteredPapers = useMemo(() => {
-    if (filterBy === "All") return papers;
-    return papers.filter((p) => p.tags.includes(filterBy));
-  }, [filterBy]);
+    if (filterBy === "All") return papersData;
+    return papersData.filter((p) => {
+      const statusMatch = p.status?.toLowerCase() === filterBy.toLowerCase().replace(/ /g, "_") || p.status?.toLowerCase() === filterBy.toLowerCase();
+      const catMatch = p.category?.name?.toLowerCase().includes(filterBy.toLowerCase()) || p.category_name?.toLowerCase().includes(filterBy.toLowerCase());
+      return statusMatch || catMatch;
+    });
+  }, [filterBy, papersData]);
 
   const statusColor = (status) => {
-    if (status === "Peer Review") return "text-[var(--badge-blue-text)] bg-[var(--badge-blue)]";
-    if (status === "Ready to Publish") return "text-[var(--badge-emerald-text)] bg-[var(--badge-emerald)]";
-    if (status === "Draft") return "text-[var(--badge-slate-text)] bg-[var(--badge-slate)]";
+    const s = (status || "").toLowerCase();
+    if (s === "peer review" || s === "in_review" || s === "review") {
+      return "text-[var(--badge-blue-text)] bg-[var(--badge-blue)]";
+    }
+    if (s === "ready to publish" || s === "approved" || s === "published") {
+      return "text-[var(--badge-emerald-text)] bg-[var(--badge-emerald)]";
+    }
+    if (s === "draft") {
+      return "text-[var(--badge-slate-text)] bg-[var(--badge-slate)]";
+    }
     return "text-[var(--badge-amber-text)] bg-[var(--badge-amber)]";
+  };
+
+  const formatStatusLabel = (status) => {
+    if (!status) return "Draft";
+    return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
   const renderVerificationStatus = () => {
@@ -129,9 +252,9 @@ export default function Overview() {
               <div className="text-sm font-bold text-[var(--text-primary)]">Role verification required</div>
               <div className="text-xs text-[var(--text-secondary)] mt-0.5">Submit your university ID card to verify your Student or Faculty/Supervisor role.</div>
             </div>
-            <a href="/role-setup" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-indigo-600 bg-[var(--badge-blue)] hover:opacity-80 transition-colors">
+            <Link to="/role-setup" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-indigo-600 bg-[var(--badge-blue)] hover:opacity-80 transition-colors">
               Verify <ArrowRight size={13} />
-            </a>
+            </Link>
           </div>
         </motion.div>
       );
@@ -194,9 +317,9 @@ export default function Overview() {
                 </div>
               )}
             </div>
-            <a href="/role-setup" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-[var(--error)] bg-[var(--error-bg)] hover:opacity-80 transition-colors">
+            <Link to="/role-setup" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-[var(--error)] bg-[var(--error-bg)] hover:opacity-80 transition-colors">
               Resubmit <ArrowRight size={13} />
-            </a>
+            </Link>
           </div>
         </motion.div>
       );
@@ -206,32 +329,66 @@ export default function Overview() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-      <div>
-        <div className="text-xs text-[var(--text-muted)] font-medium mb-1">Welcome back,</div>
-        <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">Dr. Leila Morgan</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="text-xs text-[var(--text-muted)] font-medium mb-1">Welcome back,</div>
+          <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
+            {currentUser?.full_name || "Dr. Leila Morgan"}
+          </h1>
+        </div>
+
+        {error && (
+          <button
+            onClick={fetchDashboardData}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
+          >
+            <RotateCw size={14} className={loading ? "animate-spin" : ""} /> Retry Sync
+          </button>
+        )}
       </div>
 
       {renderVerificationStatus()}
 
-      {/* Stat Cards - Responsive Grid */}
+      {error && (
+        <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-rose-200 bg-rose-50/80 p-4 mt-5 text-sm text-rose-600 flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={fetchDashboardData} className="underline font-bold hover:opacity-80">Retry</button>
+        </motion.div>
+      )}
+
+      {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mt-7">
-        {stats.map((s) => (
-          <motion.div key={s.label} whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.98 }} className="glass-panel rounded-3xl p-6 transition-all duration-200">
-            <div className="flex items-start justify-between mb-4">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-50 to-violet-50 border border-[var(--border)] flex items-center justify-center shadow-sm">
-                <s.icon size={16} className="text-indigo-500" />
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="glass-panel rounded-3xl p-6 space-y-3">
+                <div className="h-9 w-9 rounded-xl skeleton" />
+                <div className="h-3 w-24 rounded skeleton" />
+                <div className="h-8 w-16 rounded skeleton" />
+                <div className="h-3 w-36 rounded skeleton" />
               </div>
-            </div>
-            <div className="text-[10px] font-bold tracking-[0.12em] text-[var(--text-muted)] uppercase mb-1">{s.label}</div>
-            <div className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
-              <AnimatedCounter value={s.value} suffix={s.suffix} />
-            </div>
-            <div className="text-xs text-[var(--text-secondary)] mt-1.5">{s.sub}</div>
-          </motion.div>
-        ))}
+            ))
+          : statsList.map((s) => (
+              <motion.div
+                key={s.label}
+                whileHover={{ y: -4, scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                className="glass-panel rounded-3xl p-6 transition-all duration-200"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-50 to-violet-50 border border-[var(--border)] flex items-center justify-center shadow-sm">
+                    <s.icon size={16} className="text-indigo-500" />
+                  </div>
+                </div>
+                <div className="text-[10px] font-bold tracking-[0.12em] text-[var(--text-muted)] uppercase mb-1">{s.label}</div>
+                <div className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
+                  <AnimatedCounter value={s.value} suffix={s.suffix} />
+                </div>
+                <div className="text-xs text-[var(--text-secondary)] mt-1.5">{s.sub}</div>
+              </motion.div>
+            ))}
       </div>
 
-      {/* Recent Papers + Priority Tasks - Responsive Grid */}
+      {/* Recent Papers + Priority Tasks */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5 mt-7">
         <div className="glass-panel rounded-[28px] p-8">
           <div className="flex items-center justify-between mb-6 relative" ref={filterRef}>
@@ -240,15 +397,38 @@ export default function Overview() {
               <h2 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">Recent Papers</h2>
             </div>
             <div className="relative z-20">
-              <button onClick={() => { setIsFilterOpen(!isFilterOpen); window.dispatchEvent(new CustomEvent("closeNotif")); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] text-xs font-semibold text-[var(--text-primary)] shadow-sm hover:shadow transition-all duration-200">
+              <button
+                onClick={() => {
+                  setIsFilterOpen(!isFilterOpen);
+                  window.dispatchEvent(new CustomEvent("closeNotif"));
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] text-xs font-semibold text-[var(--text-primary)] shadow-sm hover:shadow transition-all duration-200 cursor-pointer"
+              >
                 {filterBy === "All" ? "Filter" : filterBy}
                 <ChevronDown size={12} className={`transition-transform duration-200 ${isFilterOpen ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence>
                 {isFilterOpen && (
-                  <motion.div initial={{ opacity: 0, scale: 0.95, y: -5 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: -5 }} transition={{ duration: 0.15 }} className="absolute right-0 top-full mt-2 w-40 bg-[var(--bg-surface-elevated)] rounded-xl shadow-xl border border-[var(--border)] p-1.5 z-30 overflow-hidden">
-                    {["All", "Peer Review", "Ready to Publish", "Draft", "In Revision"].map((item) => (
-                      <button key={item} onClick={() => { setFilterBy(item); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${filterBy === item ? "bg-[var(--badge-blue)] text-[var(--badge-blue-text)] font-semibold" : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]"}`}>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-44 bg-[var(--bg-surface-elevated)] rounded-xl shadow-xl border border-[var(--border)] p-1.5 z-30 overflow-hidden"
+                  >
+                    {["All", "Peer Review", "Ready to Publish", "Draft", "In Revision", "Approved"].map((item) => (
+                      <button
+                        key={item}
+                        onClick={() => {
+                          setFilterBy(item);
+                          setIsFilterOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${
+                          filterBy === item
+                            ? "bg-[var(--badge-blue)] text-[var(--badge-blue-text)] font-semibold"
+                            : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]"
+                        }`}
+                      >
                         {item}
                       </button>
                     ))}
@@ -259,68 +439,175 @@ export default function Overview() {
           </div>
 
           <div className="space-y-5">
-            {filteredPapers.map((p, idx) => (
-              <motion.div key={p.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} className={`${idx !== 0 ? "border-t border-[var(--border)] pt-5" : ""} block group cursor-pointer`} whileHover={{ x: 6 }}>
-                <div className="flex items-start gap-4 pt-0.5">
-                  <div className="text-[11px] text-[var(--text-muted)] font-medium w-14 shrink-0 pt-0.5">{p.id}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      {p.tags.map((t) => (
-                        <span key={t} className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${statusColor(t)}`}>{t}</span>
-                      ))}
-                    </div>
-                    <h3 className="text-base font-bold text-[var(--text-primary)] leading-snug mb-1 group-hover:text-indigo-600 transition-colors">{p.title}</h3>
-                    <div className="text-xs text-[var(--text-secondary)]">{p.authors}</div>
-                  </div>
-                  <div className="text-right shrink-0 pl-4">
-                    <div className="text-lg font-extrabold text-[var(--text-primary)]">{p.citations}</div>
-                    <div className="text-[10px] text-[var(--text-muted)] tracking-[0.08em] uppercase">Citations</div>
-                  </div>
+            {loading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="space-y-2 py-3 border-t border-[var(--border)] first:border-0">
+                  <div className="h-4 w-28 rounded skeleton" />
+                  <div className="h-5 w-3/4 rounded skeleton" />
+                  <div className="h-3 w-1/2 rounded skeleton" />
                 </div>
-              </motion.div>
-            ))}
+              ))
+            ) : filteredPapers.length > 0 ? (
+              filteredPapers.slice(0, 5).map((p, idx) => {
+                const authorsText = p.authors
+                  ? Array.isArray(p.authors)
+                    ? p.authors.map((a) => (typeof a === "string" ? a : a.name || a.full_name)).join(" · ")
+                    : p.authors
+                  : p.uploaded_by?.full_name || currentUser?.full_name || "Author";
+                const displayId = p.id ? `RP-${String(p.id).padStart(4, "0")}` : `RP-${idx + 1}`;
+                const displayStatus = formatStatusLabel(p.status);
+                const categoryTag = p.category?.name || p.research_area?.name || "General Research";
+
+                return (
+                  <motion.div
+                    key={p.id || idx}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className={`${idx !== 0 ? "border-t border-[var(--border)] pt-5" : ""} block group cursor-pointer`}
+                    whileHover={{ x: 6 }}
+                  >
+                    <Link to="/dashboard/papers" className="flex items-start gap-4 pt-0.5">
+                      <div className="text-[11px] text-[var(--text-muted)] font-medium w-16 shrink-0 pt-0.5 font-mono">
+                        {displayId}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[var(--muted)] text-[var(--muted-foreground)]">
+                            {categoryTag}
+                          </span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${statusColor(p.status)}`}>
+                            {displayStatus}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-bold text-[var(--text-primary)] leading-snug mb-1 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                          {p.title}
+                        </h3>
+                        <div className="text-xs text-[var(--text-secondary)] line-clamp-1">{authorsText}</div>
+                      </div>
+                      <div className="text-right shrink-0 pl-4">
+                        <div className="text-lg font-extrabold text-[var(--text-primary)]">
+                          {p.citations ?? p.views ?? 0}
+                        </div>
+                        <div className="text-[10px] text-[var(--text-muted)] tracking-[0.08em] uppercase">
+                          {p.citations !== undefined ? "Citations" : "Views"}
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.div>
+                );
+              })
+            ) : (
+              <div className="py-12 text-center text-sm text-[var(--text-muted)]">
+                No papers found in the pipeline.
+                <div className="mt-3">
+                  <Link
+                    to="/dashboard/upload"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-linear-to-r from-indigo-500 to-violet-500 shadow-md shadow-indigo-500/20"
+                  >
+                    Upload New Paper
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="space-y-5">
+          {/* Priority Tasks */}
           <div className="glass-panel rounded-[28px] p-6">
-            <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-1">Active Workspace</div>
-            <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight mb-6">Priority Tasks</h3>
+            <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-1">
+              Active Workspace
+            </div>
+            <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight mb-6">
+              Priority Tasks
+            </h3>
             <div className="space-y-4">
-              {tasks.map((t, i) => (
-                <label key={i} className="flex items-start gap-3 group cursor-pointer">
-                  <input type="checkbox" className="mt-0.5 h-5 w-5 rounded-md border-2 border-[var(--border)] text-indigo-500 focus:ring-indigo-200 accent-indigo-500" />
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-[var(--text-primary)] leading-snug group-hover:text-indigo-600 transition-colors">{t.label}</div>
-                    <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] mt-1">
-                      <CircleDot size={10} className="text-indigo-400" />
-                      {t.meta}
+              {loading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex gap-3 items-center">
+                    <div className="h-5 w-5 rounded skeleton" />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-4 w-3/4 rounded skeleton" />
+                      <div className="h-3 w-1/3 rounded skeleton" />
                     </div>
                   </div>
-                </label>
-              ))}
+                ))
+              ) : tasksData.length > 0 ? (
+                tasksData.slice(0, 4).map((t, i) => (
+                  <label key={t.id || i} className="flex items-start gap-3 group cursor-pointer">
+                    <input
+                      type="checkbox"
+                      defaultChecked={t.status === "completed"}
+                      className="mt-0.5 h-5 w-5 rounded-md border-2 border-[var(--border)] text-indigo-500 focus:ring-indigo-200 accent-indigo-500"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-[var(--text-primary)] leading-snug group-hover:text-indigo-600 transition-colors truncate">
+                        {t.title || t.name}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] mt-1">
+                        <CircleDot size={10} className="text-indigo-400 shrink-0" />
+                        <span className="truncate">
+                          {t.assigned_to?.full_name || t.assigned_user?.full_name || "Assigned"} · {t.due_date || t.deadline || "In Progress"}
+                        </span>
+                      </div>
+                    </div>
+                  </label>
+                ))
+              ) : (
+                <div className="py-6 text-center text-xs text-[var(--text-muted)]">
+                  No priority tasks assigned.
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Activity Feed */}
           <div className="glass-panel rounded-[28px] p-6">
-            <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-1">Live Feed</div>
-            <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight mb-6">Activity</h3>
-            <div className="space-y-5">
-              {activities.map((a, i) => (
-                <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.1 }}>
-                  <p className="text-sm text-[var(--text-primary)] font-medium leading-snug">
-                    <span className="font-bold">{a.text.split(" ")[0]} {a.text.split(" ")[1]}</span> {a.text.split(" ").slice(2).join(" ")}
-                  </p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">{a.meta}</p>
-                </motion.div>
-              ))}
+            <div className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase mb-1">
+              Live Feed
+            </div>
+            <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight mb-6">
+              Activity
+            </h3>
+            <div className="space-y-4">
+              {loading ? (
+                Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="space-y-1.5 py-1">
+                    <div className="h-4 w-5/6 rounded skeleton" />
+                    <div className="h-3 w-1/4 rounded skeleton" />
+                  </div>
+                ))
+              ) : activitiesData.length > 0 ? (
+                activitiesData.slice(0, 4).map((a, i) => {
+                  const messageText = a.message || `${a.action || "Action"} on ${a.entity_type || "item"}`;
+                  const createdTime = a.created_at ? new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently";
+                  return (
+                    <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.1 }}>
+                      <p className="text-sm text-[var(--text-primary)] font-medium leading-snug">
+                        {messageText}
+                      </p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">{createdTime}</p>
+                    </motion.div>
+                  );
+                })
+              ) : (
+                <div className="py-6 text-center text-xs text-[var(--text-muted)]">
+                  No recent activities recorded.
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Insight Card - Responsive */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-[28px] bg-gradient-to-r from-[var(--bg-sidebar)] via-[var(--bg-surface)] to-[var(--bg-sidebar)] text-white p-8 shadow-2xl shadow-indigo-900/20 relative overflow-hidden mt-7">
+      {/* Insight Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="rounded-[28px] bg-gradient-to-r from-[var(--bg-sidebar)] via-[var(--bg-surface)] to-[var(--bg-sidebar)] text-white p-8 shadow-2xl shadow-indigo-900/20 relative overflow-hidden mt-7"
+      >
         <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
         <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
         <div className="relative z-10 flex flex-col sm:flex-row items-start gap-6">
@@ -330,11 +617,16 @@ export default function Overview() {
           <div className="flex-1 min-w-0">
             <div className="text-[10px] font-bold tracking-[0.15em] text-indigo-300 uppercase mb-1.5">ScholarOS Insight</div>
             <h3 className="text-xl font-extrabold tracking-tight mb-2">Your reviewer turnaround is accelerating.</h3>
-            <p className="text-sm text-slate-300 leading-relaxed max-w-2xl">Teams using structured paper threads and visible milestone ownership are closing feedback loops 3x faster.</p>
+            <p className="text-sm text-slate-300 leading-relaxed max-w-2xl">
+              Teams using structured paper threads and visible milestone ownership are closing feedback loops 3x faster.
+            </p>
           </div>
-          <button className="w-full sm:w-auto self-start sm:self-center shrink-0 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+          <Link
+            to="/dashboard/papers"
+            className="w-full sm:w-auto self-start sm:self-center shrink-0 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+          >
             View Analytics <ArrowRight size={16} />
-          </button>
+          </Link>
         </div>
       </motion.div>
     </motion.div>

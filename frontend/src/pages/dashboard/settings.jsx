@@ -1,14 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { X, Sun, Moon, Monitor } from "lucide-react";
 import { useTheme } from "../../contexts/ThemeContext.jsx";
 import { cn } from "../../utils/cn.js";
+import { getCurrentUser } from "../../services/dashboardService.js";
 
 export default function Settings() {
   const navigate = useNavigate();
   const { selectedTheme, setTheme } = useTheme();
-  const [email, setEmail] = useState("nazifa@gmail.com");
+
+  const [email, setEmail] = useState(() => {
+    try {
+      const stored = localStorage.getItem("scholaros_user");
+      if (stored) {
+        const u = JSON.parse(stored);
+        return u.email || "user@institution.edu";
+      }
+    } catch {}
+    return "user@institution.edu";
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentUser()
+      .then((res) => {
+        if (isMounted && res?.data?.email) {
+          setEmail(res.data.email);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const [password, setPassword] = useState("••••••••");
   const [taskNotifications, setTaskNotifications] = useState(true);
   const [paperReviewNotifications, setPaperReviewNotifications] =

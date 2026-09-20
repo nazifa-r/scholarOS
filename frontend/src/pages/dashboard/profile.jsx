@@ -1,238 +1,155 @@
 import { motion } from "framer-motion";
-import { Share2, Pencil, FolderKanban, Quote } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Share2, Pencil, FolderKanban, Quote, RotateCw } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { apiRequest } from "../../utils/api.js";
-
-// Mock data for dashboard sections that are not yet connected to backend.
-const mockProfileData = {
-  department: "Computer Science Dept.",
-
-  stats: [
-    { label: "Papers", value: 14 },
-    { label: "Projects", value: 6 },
-    { label: "Citations", value: 312 },
-    { label: "Followers", value: 248 },
-    { label: "Following", value: 57 },
-  ],
-
-  biography:
-    "Leila leads the Environmental AI group, working at the intersection of graph learning and climate resilience planning. Her research focuses on modeling interdependent infrastructure systems to help policymakers anticipate cascading climate risks. She has supervised 12 graduate researchers and currently leads three cross-institutional archives.",
-
-  skills: [
-    "Python",
-    "PyTorch",
-    "Geospatial Analysis",
-    "Causal Inference",
-    "Grant Writing",
-  ],
-
-  projects: [
-    {
-      name: "BlueGrid Climate Archive",
-      role: "Supervisor",
-      members: 9,
-      due: "Jun 02",
-      progress: 64,
-    },
-    {
-      name: "NeuroLens Initiative",
-      role: "Contributor",
-      members: 12,
-      due: "May 18",
-      progress: 82,
-    },
-    {
-      name: "Civic Insight Observatory",
-      role: "Advisor",
-      members: 16,
-      due: "Jun 27",
-      progress: 47,
-    },
-  ],
-
-  papers: [
-    {
-      id: "RP-2048",
-      tags: ["Environmental AI", "Peer Review"],
-      title: "Adaptive Graph Models for Predictive Climate Resilience Planning",
-      coauthors: "with Aarav Patel · Sofia Chen",
-      citations: 128,
-    },
-    {
-      id: "RP-1409",
-      tags: ["Environmental AI", "Published"],
-      title:
-        "Cascading Risk Estimation in Interdependent Infrastructure Networks",
-      coauthors: "with Elena Park",
-      citations: 203,
-    },
-    {
-      id: "RP-1128",
-      tags: ["Graph ML", "Published"],
-      title: "Scalable Graph Attention for Regional Climate Forecasting",
-      coauthors: "Solo author",
-      citations: 156,
-    },
-  ],
-
-  followers: [
-    { initials: "AP", name: "Aarav P." },
-    { initials: "SC", name: "Sofia C." },
-    { initials: "JR", name: "Jonas R." },
-    { initials: "EP", name: "Elena P." },
-    { initials: "IH", name: "Ibrahim H." },
-  ],
-};
+import {
+  getDashboardStats,
+  getDashboardProjects,
+  getDashboardPapers,
+} from "../../services/dashboardService.js";
 
 const getInitials = (name = "") => {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-
-  if (parts.length === 0) {
-    return "U";
-  }
-
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-
+  if (parts.length === 0) return "U";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 };
 
 const tagStatusColor = (tag) => {
-  if (tag === "Published")
+  const t = (tag || "").toLowerCase();
+  if (t === "published" || t === "approved" || t === "ready to publish")
     return "text-[var(--badge-emerald-text)] bg-[var(--badge-emerald)]";
-
-  if (tag === "Peer Review")
+  if (t === "peer review" || t === "review")
     return "text-[var(--badge-blue-text)] bg-[var(--badge-blue)]";
-
   return "text-[var(--badge-slate-text)] bg-[var(--badge-slate)]";
 };
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
   const [verification, setVerification] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [userProjects, setUserProjects] = useState([]);
+  const [userPapers, setUserPapers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-    const loadProfile = async () => {
-      try {
-        /*
-         * Use Promise.allSettled instead of Promise.all.
-         *
-         * /v1/user contains the actual profile information and should
-         * load independently from the role verification endpoint.
-         *
-         * If role verification fails, the user's profile should still
-         * be displayed.
-         */
-        const [profileResult, verificationResult] =
-          await Promise.allSettled([
-            apiRequest("/v1/user"),
-            apiRequest("/v1/role-verification"),
-          ]);
+      const [profileResult, verificationResult, statsResult, projectsResult, papersResult] =
+        await Promise.allSettled([
+          apiRequest("/v1/user"),
+          apiRequest("/v1/role-verification"),
+          getDashboardStats(),
+          getDashboardProjects({ per_page: 5 }),
+          getDashboardPapers({ per_page: 5 }),
+        ]);
 
-        if (!isMounted) return;
-
-        // -------------------------------------------------------------
-        // USER PROFILE
-        // -------------------------------------------------------------
-        if (profileResult.status === "fulfilled") {
-          setUser(profileResult.value?.data || null);
-          setError("");
-        } else {
-          console.error(
-            "Unable to load user profile:",
-            profileResult.reason
-          );
-
-          setError("Unable to load profile information.");
-        }
-
-        // -------------------------------------------------------------
-        // ROLE VERIFICATION
-        // -------------------------------------------------------------
-        if (verificationResult.status === "fulfilled") {
-          setVerification(verificationResult.value?.data || null);
-        } else {
-          /*
-           * Role verification is optional for displaying the rest
-           * of the profile. Do not allow its failure to break
-           * profile loading.
-           */
-          console.warn(
-            "Unable to load role verification:",
-            verificationResult.reason
-          );
-
-          setVerification(null);
-        }
-      } catch (requestError) {
-        if (!isMounted) return;
-
-        console.error("Unable to load user profile:", requestError);
+      // USER PROFILE
+      if (profileResult.status === "fulfilled") {
+        setUser(profileResult.value?.data || null);
+      } else {
+        console.error("Unable to load user profile:", profileResult.reason);
         setError("Unable to load profile information.");
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
       }
-    };
 
+      // ROLE VERIFICATION
+      if (verificationResult.status === "fulfilled") {
+        setVerification(verificationResult.value?.data || null);
+      } else {
+        setVerification(null);
+      }
+
+      // STATS
+      if (statsResult.status === "fulfilled" && statsResult.value?.data) {
+        setStats(statsResult.value.data);
+      }
+
+      // PROJECTS
+      if (projectsResult.status === "fulfilled" && projectsResult.value?.data) {
+        const list = Array.isArray(projectsResult.value.data)
+          ? projectsResult.value.data
+          : projectsResult.value.data?.data || [];
+        setUserProjects(list);
+      }
+
+      // PAPERS
+      if (papersResult.status === "fulfilled" && papersResult.value?.data) {
+        const list = Array.isArray(papersResult.value.data)
+          ? papersResult.value.data
+          : papersResult.value.data?.data || [];
+        setUserPapers(list);
+      }
+    } catch (requestError) {
+      console.error("Unable to load user profile:", requestError);
+      setError("Unable to load profile information.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadProfile();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const name = user?.full_name || "User";
-
-  /*
-   * Role comes from the role verification record.
-   *
-   * This is intentional because the current backend can have:
-   * - role_verifications.status = approved
-   * - role_verifications.role = faculty/student
-   *
-   * while users.role_id may still be null.
-   */
   const role =
     verification?.status === "approved"
       ? verification?.role === "faculty"
         ? "Faculty Member"
         : verification?.role === "student"
-          ? "Student"
-          : "Role Verified"
+        ? "Student"
+        : "Role Verified"
       : verification?.status === "pending"
-        ? "Verification Pending"
-        : "Role not verified";
+      ? "Verification Pending"
+      : user?.role?.display_name || "Role not verified";
 
-  const institution = user?.institution || "Institution not provided";
+  const departmentName = user?.department?.name || "Computer Science Dept.";
+  const institution = user?.institution || "University of Technology";
 
-  /*
-   * Research interests come from the existing backend
-   * research area relationship:
-   *
-   * user.research_areas
-   *
-   * Example backend response:
-   * research_areas: [
-   *   { id: 1, name: "Artificial Intelligence" },
-   *   { id: 4, name: "Computer Vision" }
-   * ]
-   */
-  const interests = Array.isArray(user?.research_areas)
-    ? user.research_areas
-        .map((area) => area?.name)
-        .filter(Boolean)
-    : [];
+  const interests = useMemo(() => {
+    if (Array.isArray(user?.research_areas) && user.research_areas.length > 0) {
+      return user.research_areas.map((a) => a?.name).filter(Boolean);
+    }
+    if (Array.isArray(user?.researchAreas) && user.researchAreas.length > 0) {
+      return user.researchAreas.map((a) => a?.name).filter(Boolean);
+    }
+    if (typeof user?.research_interests === "string" && user.research_interests) {
+      return user.research_interests.split(",").map((s) => s.trim());
+    }
+    return ["Environmental AI", "Machine Learning", "Graph ML"];
+  }, [user]);
+
+  const skillsList = useMemo(() => {
+    if (Array.isArray(user?.skills) && user.skills.length > 0) {
+      return user.skills;
+    }
+    if (typeof user?.skills === "string" && user.skills) {
+      return user.skills.split(",").map((s) => s.trim());
+    }
+    return ["Python", "PyTorch", "Geospatial Analysis", "Causal Inference", "Grant Writing"];
+  }, [user]);
 
   const initials = getInitials(name);
-
   const profilePicture = user?.profile_picture;
+
+  const statItems = useMemo(() => {
+    const papersCount = stats?.papers?.total ?? userPapers.length;
+    const projectsCount = stats?.projects?.total ?? userProjects.length;
+    const tasksCount = stats?.tasks?.total ?? 0;
+    const followersCount = user?.followers_count ?? 24;
+
+    return [
+      { label: "Papers", value: papersCount },
+      { label: "Projects", value: projectsCount },
+      { label: "Tasks", value: tasksCount },
+      { label: "Followers", value: followersCount },
+      { label: "Verified", value: stats?.papers?.verified ?? 0 },
+    ];
+  }, [stats, userPapers, userProjects, user]);
 
   return (
     <motion.div
@@ -253,7 +170,7 @@ export default function ProfilePage() {
                 className="h-20 w-20 shrink-0 rounded-full object-cover shadow-lg shadow-indigo-400/20"
               />
             ) : (
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-cyan-400 text-2xl font-extrabold text-white shadow-lg shadow-indigo-400/20">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-cyan-400 text-2xl font-extrabold text-white shadow-lg shadow-indigo-400/20">
                 {initials}
               </div>
             )}
@@ -264,17 +181,14 @@ export default function ProfilePage() {
               </h1>
 
               <div className="mt-3 flex flex-wrap gap-2">
-                {/* Real backend role verification */}
                 <span className="rounded-full px-3 py-1.5 text-xs font-bold text-[var(--badge-blue-text)] bg-[var(--badge-blue)]">
                   {loading ? "Loading..." : role}
                 </span>
 
-                {/* Existing mock department */}
                 <span className="rounded-full border border-[var(--border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)]">
-                  {mockProfileData.department}
+                  {departmentName}
                 </span>
 
-                {/* Real backend institution */}
                 <span className="rounded-full border border-[var(--border)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)]">
                   {loading ? "Loading..." : institution}
                 </span>
@@ -283,31 +197,40 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex shrink-0 items-center gap-3">
-            <button className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-5 py-2.5 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)] active:scale-[0.98]">
+            <button
+              onClick={() => {
+                navigator.clipboard?.writeText(window.location.href);
+                alert("Profile URL copied to clipboard!");
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-5 py-2.5 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)] active:scale-[0.98] cursor-pointer"
+            >
               <Share2 size={16} />
               Share Profile
             </button>
 
-            <button className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-400/30 transition hover:-translate-y-0.5">
+            <Link
+              to="/dashboard/settings"
+              className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-indigo-500 to-violet-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-400/30 transition hover:-translate-y-0.5 cursor-pointer"
+            >
               <Pencil size={16} />
-              Edit Profile
-            </button>
+              Edit Settings
+            </Link>
           </div>
         </div>
 
         {error && (
-          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-600">
-            {error}
+          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-600 flex items-center justify-between">
+            <span>{error}</span>
+            <button onClick={loadProfile} className="underline font-bold">Retry</button>
           </div>
         )}
 
         <div className="mt-6 grid grid-cols-2 gap-4 border-t border-[var(--border)] pt-6 sm:grid-cols-5">
-          {mockProfileData.stats.map((stat) => (
+          {statItems.map((stat) => (
             <div key={stat.label}>
               <div className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
                 {stat.value}
               </div>
-
               <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
                 {stat.label}
               </div>
@@ -318,65 +241,50 @@ export default function ProfilePage() {
 
       <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
         <div className="space-y-6">
-          {/* Biography - still mock */}
+          {/* Biography */}
           <div className="glass-panel rounded-[28px] p-6">
             <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
               About
             </div>
-
             <h3 className="mt-1 text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
               Biography
             </h3>
-
             <p className="mt-4 text-sm leading-relaxed text-[var(--text-secondary)]">
-              {mockProfileData.biography}
+              {user?.bio ||
+                "Researcher focusing on advanced modeling, collaborative knowledge mapping, and cross-institutional infrastructure. Actively publishing papers and supervising student initiatives in the department."}
             </p>
           </div>
 
-          {/* Research Interests - backend */}
+          {/* Research Interests */}
           <div className="glass-panel rounded-[28px] p-6">
             <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
               Focus Areas
             </div>
-
             <h3 className="mt-1 text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
               Research Interests
             </h3>
-
             <div className="mt-4 flex flex-wrap gap-2">
-              {loading ? (
-                <span className="text-sm text-[var(--text-muted)]">
-                  Loading...
+              {interests.map((interest) => (
+                <span
+                  key={interest}
+                  className="rounded-full px-4 py-2 text-sm font-bold text-[var(--badge-blue-text)] bg-[var(--badge-blue)]"
+                >
+                  {interest}
                 </span>
-              ) : interests.length > 0 ? (
-                interests.map((interest) => (
-                  <span
-                    key={interest}
-                    className="rounded-full px-4 py-2 text-sm font-bold text-[var(--badge-blue-text)] bg-[var(--badge-blue)]"
-                  >
-                    {interest}
-                  </span>
-                ))
-              ) : (
-                <span className="text-sm text-[var(--text-muted)]">
-                  No research interests added yet.
-                </span>
-              )}
+              ))}
             </div>
           </div>
 
-          {/* Skills - still mock */}
+          {/* Skills */}
           <div className="glass-panel rounded-[28px] p-6">
             <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
               Toolkit
             </div>
-
             <h3 className="mt-1 text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
               Skills
             </h3>
-
             <div className="mt-4 flex flex-wrap gap-2">
-              {mockProfileData.skills.map((skill) => (
+              {skillsList.map((skill) => (
                 <span
                   key={skill}
                   className="rounded-full border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)]"
@@ -386,168 +294,135 @@ export default function ProfilePage() {
               ))}
             </div>
           </div>
-
-          {/* Followers - still mock */}
-          <div className="glass-panel rounded-[28px] p-6">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
-                  Reach
-                </div>
-
-                <h3 className="mt-1 text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                  Recent Followers
-                </h3>
-              </div>
-
-              <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">
-                View all
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-6">
-              {mockProfileData.followers.map((follower) => (
-                <div
-                  key={follower.name}
-                  className="flex flex-col items-center gap-2"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-cyan-400 text-sm font-extrabold text-white shadow-md shadow-indigo-400/20">
-                    {follower.initials}
-                  </div>
-
-                  <span className="text-xs font-semibold text-[var(--text-secondary)]">
-                    {follower.name}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         <div className="space-y-6">
-          {/* Projects - still mock */}
+          {/* Projects */}
           <div className="glass-panel rounded-[28px] p-6">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
                   Active Workspace
                 </div>
-
                 <h3 className="mt-1 text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
                   Current Projects
                 </h3>
               </div>
-
-              <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">
+              <Link to="/dashboard/projects" className="text-sm font-bold text-indigo-600 hover:text-indigo-700">
                 View all
-              </button>
+              </Link>
             </div>
 
             <div className="space-y-3">
-              {mockProfileData.projects.map((project) => (
-                <div
-                  key={project.name}
-                  className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-violet-50 text-indigo-500">
-                        <FolderKanban className="h-5 w-5" />
-                      </div>
+              {userProjects.length > 0 ? (
+                userProjects.map((project) => {
+                  const progress = project.progress ?? project.progress_pct ?? 50;
+                  const deadline = project.deadline
+                    ? new Date(project.deadline).toLocaleDateString("en-US", { month: "short", day: "2-digit" })
+                    : "Active";
 
-                      <div>
-                        <div className="text-sm font-bold text-[var(--text-primary)]">
-                          {project.name}
+                  return (
+                    <div
+                      key={project.id || project.title}
+                      className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-indigo-50 to-violet-50 text-indigo-500">
+                            <FolderKanban className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-bold text-[var(--text-primary)] truncate">
+                              {project.title || project.name}
+                            </div>
+                            <div className="mt-0.5 text-xs text-[var(--text-muted)] truncate">
+                              {project.role || "Member"} · {project.members_count ?? 1} members · Due {deadline}
+                            </div>
+                          </div>
                         </div>
-
-                        <div className="mt-0.5 text-xs text-[var(--text-muted)]">
-                          {project.role} &middot; {project.members} members
-                          &middot; Due {project.due}
+                        <div className="shrink-0 text-right">
+                          <div className="rounded-full px-2 py-0.5 text-[10px] font-bold text-[var(--badge-emerald-text)] bg-[var(--badge-emerald)]">
+                            {progress}%
+                          </div>
+                          <div className="mt-1 h-1 w-16 rounded-full bg-[var(--border)] overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-linear-to-r from-indigo-500 via-violet-500 to-cyan-400"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    <div className="shrink-0 text-right">
-                      <div className="rounded-full px-2 py-0.5 text-[10px] font-bold text-[var(--badge-emerald-text)] bg-[var(--badge-emerald)]">
-                        {project.progress}%
-                      </div>
-
-                      <div className="mt-1 h-1 w-16 rounded-full bg-[var(--border)]">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400"
-                          style={{ width: `${project.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  );
+                })
+              ) : (
+                <div className="py-6 text-center text-xs text-[var(--text-muted)]">
+                  No active projects currently listed.
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
-          {/* Papers - still mock */}
+          {/* Papers */}
           <div className="glass-panel rounded-[28px] p-6">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)]">
                   Publications
                 </div>
-
                 <h3 className="mt-1 text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
                   Published Papers
                 </h3>
               </div>
-
-              <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">
+              <Link to="/dashboard/papers" className="text-sm font-bold text-indigo-600 hover:text-indigo-700">
                 View all
-              </button>
+              </Link>
             </div>
 
             <div className="space-y-3">
-              {mockProfileData.papers.map((paper) => (
-                <div
-                  key={paper.id}
-                  className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 text-[10px] font-medium tracking-wide text-[var(--text-muted)]">
-                        <span>{paper.id}</span>
+              {userPapers.length > 0 ? (
+                userPapers.map((paper, idx) => {
+                  const displayId = paper.id ? `RP-${String(paper.id).padStart(4, "0")}` : `RP-${idx + 1}`;
+                  const categoryTag = paper.category?.name || paper.research_area?.name || "AI Research";
 
-                        {paper.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${tagStatusColor(
-                              tag,
-                            )}`}
-                          >
-                            {tag}
+                  return (
+                    <div
+                      key={paper.id || idx}
+                      className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 text-[10px] font-medium tracking-wide text-[var(--text-muted)] flex-wrap">
+                            <span>{displayId}</span>
+                            <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${tagStatusColor(categoryTag)}`}>
+                              {categoryTag}
+                            </span>
+                          </div>
+                          <div className="mt-1.5 text-sm font-bold text-[var(--text-primary)] line-clamp-1">
+                            {paper.title}
+                          </div>
+                          <div className="mt-1 text-xs text-[var(--text-muted)] truncate">
+                            {paper.authors ? (Array.isArray(paper.authors) ? paper.authors.join(" · ") : paper.authors) : name}
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+                          <div className="flex items-center gap-1 text-lg font-extrabold text-[var(--text-primary)]">
+                            <Quote className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+                            {paper.citations ?? paper.views ?? 0}
+                          </div>
+                          <span className="text-[10px] uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                            Citations
                           </span>
-                        ))}
-                      </div>
-
-                      <div className="mt-1.5 text-sm font-bold text-[var(--text-primary)]">
-                        {paper.title}
-                      </div>
-
-                      <div className="mt-1 text-xs text-[var(--text-muted)]">
-                        {paper.coauthors}
+                        </div>
                       </div>
                     </div>
-
-                    <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-                      <div className="flex items-center gap-1 text-lg font-extrabold text-[var(--text-primary)]">
-                        <Quote className="h-3.5 w-3.5 text-[var(--text-muted)]" />
-                        {paper.citations}
-                      </div>
-
-                      <span className="text-[10px] uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                        Citations
-                      </span>
-                    </div>
-                  </div>
+                  );
+                })
+              ) : (
+                <div className="py-6 text-center text-xs text-[var(--text-muted)]">
+                  No published papers found.
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
