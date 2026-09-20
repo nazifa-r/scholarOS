@@ -1,16 +1,9 @@
 import { useState, useMemo } from "react";
-import { AlertTriangle, Check, Info, Trash2, ArrowUpRight } from "lucide-react";
+import { AlertTriangle, Check, Info, Trash2, ArrowUpRight, RotateCw } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { useNotifications } from "../../contexts/NotificationContext.jsx";
 import { cn } from "../../utils/cn.js";
-
-const tabTotals = {
-  All: 18,
-  Unread: 0,
-  Tasks: 6,
-  Papers: 4,
-  Mentions: 3,
-};
 
 const priorityStyles = {
   High: "bg-red-50 text-red-700 border-red-100",
@@ -19,24 +12,45 @@ const priorityStyles = {
 };
 
 export default function Notifications() {
+  const navigate = useNavigate();
   let context;
   try {
     context = useNotifications();
-  } catch (error) {
+  } catch {
     return (
       <div className="flex h-64 items-center justify-center text-center text-slate-600">
         <div>
           <h2 className="text-xl font-bold text-red-500">Provider Missing</h2>
           <p className="mt-2">
-            NotificationContext not found. Please check that your <code>main.jsx</code> has <code>&lt;NotificationProvider&gt;</code> wrapping the app.
+            NotificationContext not found.
           </p>
         </div>
       </div>
     );
   }
 
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = context;
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    error,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    refetch,
+  } = context;
+
   const [activeFilter, setActiveFilter] = useState("All");
+
+  const tabTotals = useMemo(() => {
+    return {
+      All: notifications.length,
+      Unread: unreadCount,
+      Tasks: notifications.filter((n) => n.category === "Tasks").length,
+      Papers: notifications.filter((n) => n.category === "Papers").length,
+      Mentions: notifications.filter((n) => n.category === "Mentions").length,
+    };
+  }, [notifications, unreadCount]);
 
   const filteredNotifications = useMemo(() => {
     if (activeFilter === "All") return notifications;
@@ -45,14 +59,15 @@ export default function Notifications() {
   }, [activeFilter, notifications]);
 
   const today = filteredNotifications.filter((n) => n.group === "Today");
-  const yesterday = filteredNotifications.filter(
-    (n) => n.group === "Yesterday",
-  );
+  const yesterday = filteredNotifications.filter((n) => n.group === "Yesterday");
+  const older = filteredNotifications.filter((n) => n.group === "Older");
 
   const handleViewRelated = (item) => {
-    alert(
-      `Navigating to related item: ${item.tag || item.title}. (Placeholder action)`,
-    );
+    if (item.link) {
+      navigate(item.link);
+    } else {
+      markAsRead(item.id);
+    }
   };
 
   return (
@@ -69,26 +84,43 @@ export default function Notifications() {
             Notifications
           </h1>
         </div>
-        <button
-          onClick={markAllAsRead}
-          disabled={unreadCount === 0}
-          className="h-11 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)] active:scale-[0.98] disabled:cursor-default disabled:opacity-50"
-        >
-          Mark all as read
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={refetch}
+            disabled={loading}
+            className="h-11 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-4 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)] active:scale-[0.98] disabled:opacity-50 cursor-pointer inline-flex items-center gap-2"
+          >
+            <RotateCw size={14} className={loading ? "animate-spin" : ""} />
+            Sync
+          </button>
+          <button
+            onClick={markAllAsRead}
+            disabled={unreadCount === 0 || loading}
+            className="h-11 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)] active:scale-[0.98] disabled:cursor-default disabled:opacity-50 cursor-pointer"
+          >
+            Mark all as read
+          </button>
+        </div>
       </div>
+
+      {error && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-600 flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={refetch} className="underline font-bold">Retry</button>
+        </div>
+      )}
 
       {/* Responsive Filter Tabs */}
       <div className="glass-panel flex items-center rounded-2xl p-1.5 shadow-sm overflow-x-auto max-w-full">
         {Object.keys(tabTotals).map((filter) => {
           const isActive = filter === activeFilter;
-          const count = filter === "Unread" ? unreadCount : tabTotals[filter];
+          const count = tabTotals[filter];
           return (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
               className={cn(
-                "flex h-10 min-w-[100px] shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-all duration-200 active:scale-[0.98]",
+                "flex h-10 min-w-[100px] shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-all duration-200 active:scale-[0.98] cursor-pointer",
                 isActive
                   ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-400/30"
                   : "text-slate-500 hover:bg-white/70 hover:text-slate-800",
@@ -111,7 +143,20 @@ export default function Notifications() {
       </div>
 
       <section className="glass-panel rounded-[28px] p-6">
-        {filteredNotifications.length > 0 ? (
+        {loading ? (
+          <div className="space-y-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex gap-4 p-4 rounded-2xl glass-panel">
+                <div className="h-11 w-11 rounded-xl skeleton shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-1/3 rounded skeleton" />
+                  <div className="h-3 w-3/4 rounded skeleton" />
+                  <div className="h-3 w-20 rounded skeleton" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredNotifications.length > 0 ? (
           <div className="space-y-6">
             {today.length > 0 && (
               <NotificationGroup
@@ -131,6 +176,15 @@ export default function Notifications() {
                 onView={handleViewRelated}
               />
             )}
+            {older.length > 0 && (
+              <NotificationGroup
+                title="Earlier"
+                notifications={older}
+                onRead={markAsRead}
+                onDelete={deleteNotification}
+                onView={handleViewRelated}
+              />
+            )}
           </div>
         ) : (
           <div className="flex min-h-64 flex-col items-center justify-center text-center">
@@ -143,12 +197,14 @@ export default function Notifications() {
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               There are no notifications in this view.
             </p>
-            <button
-              onClick={() => setActiveFilter("All")}
-              className="mt-5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-400/30 transition hover:-translate-y-0.5"
-            >
-              View all notifications
-            </button>
+            {activeFilter !== "All" && (
+              <button
+                onClick={() => setActiveFilter("All")}
+                className="mt-5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-400/30 transition hover:-translate-y-0.5 cursor-pointer"
+              >
+                View all notifications
+              </button>
+            )}
           </div>
         )}
       </section>
@@ -168,7 +224,7 @@ function NotificationGroup({ title, notifications, onRead, onDelete, onView }) {
             key={notification.id}
             onClick={() => onRead(notification.id)}
             className={cn(
-              "group glass-panel flex w-full items-start gap-4 rounded-2xl p-4 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-lg hover:border-indigo-200/80 cursor-pointer",
+              "group glass-panel flex w-full items-start gap-4 rounded-2xl p-4 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-lg hover:border-indigo-200/80 cursor-pointer",
               notification.unread ? "border-indigo-100/40 bg-indigo-50/55" : "",
             )}
           >
@@ -190,7 +246,7 @@ function NotificationGroup({ title, notifications, onRead, onDelete, onView }) {
                   <span
                     className={cn(
                       "inline-flex rounded-lg border px-2.5 py-1 text-[10px] font-bold",
-                      priorityStyles[notification.priority],
+                      priorityStyles[notification.priority] || priorityStyles.Medium,
                     )}
                   >
                     {notification.priority}
@@ -211,14 +267,14 @@ function NotificationGroup({ title, notifications, onRead, onDelete, onView }) {
             >
               <button
                 onClick={() => onView(notification)}
-                className="rounded-full p-1.5 text-[var(--text-muted)] transition hover:bg-indigo-50 hover:text-indigo-600"
+                className="rounded-full p-1.5 text-[var(--text-muted)] transition hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer"
                 title="View related item"
               >
                 <ArrowUpRight size={16} />
               </button>
               <button
                 onClick={() => onDelete(notification.id)}
-                className="rounded-full p-1.5 text-[var(--text-muted)] transition hover:bg-red-50 hover:text-red-500"
+                className="rounded-full p-1.5 text-[var(--text-muted)] transition hover:bg-red-50 hover:text-red-500 cursor-pointer"
                 title="Delete notification"
               >
                 <Trash2 size={16} />
@@ -237,18 +293,14 @@ function NotificationIcon({ icon }) {
 
   if (icon === "success") {
     return (
-      <span
-        className={`${baseClass} bg-emerald-50 text-emerald-600 border-emerald-100`}
-      >
+      <span className={`${baseClass} bg-emerald-50 text-emerald-600 border-emerald-100`}>
         <Check size={18} strokeWidth={3} />
       </span>
     );
   }
   if (icon === "warning") {
     return (
-      <span
-        className={`${baseClass} bg-amber-50 text-amber-600 border-amber-100`}
-      >
+      <span className={`${baseClass} bg-amber-50 text-amber-600 border-amber-100`}>
         <AlertTriangle size={18} />
       </span>
     );
@@ -265,7 +317,7 @@ function NotificationIcon({ icon }) {
     <span
       className={`${baseClass} bg-linear-to-br from-violet-100 to-cyan-100 border-violet-200/80 text-base font-extrabold text-violet-500`}
     >
-      {icon}
+      {typeof icon === "string" ? icon : "NT"}
     </span>
   );
 }

@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Sparkles,
   ArrowRight,
@@ -8,6 +8,7 @@ import {
   Plus,
   Bookmark,
   BookmarkCheck,
+  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../../utils/cn.js";
@@ -15,59 +16,10 @@ import {
   summarizePaper,
   getTrendingTopics,
 } from "../../services/dummyAIService.js";
-
-const papers = [
-  {
-    id: "RP-2048",
-    category: "Environmental AI",
-    status: "Peer Review",
-    statusStyle: "text-[var(--badge-blue-text)] bg-[var(--badge-blue)]",
-    title: "Adaptive Graph Models for Predictive Climate Resilience Planning",
-    authors: "Dr. Leila Morgan · Aarav Patel · Sofia Chen",
-    citations: "128",
-    views: "3.2k",
-    abstract:
-      "Introduces a graph-based framework for modeling climate resilience across interconnected infrastructure systems, validated against five regional datasets.",
-  },
-  {
-    id: "RP-1872",
-    category: "Health Informatics",
-    status: "Ready to Publish",
-    statusStyle: "text-[var(--badge-emerald-text)] bg-[var(--badge-emerald)]",
-    title:
-      "Federated Medical Imaging Pipelines for Cross-Institutional Diagnostics",
-    authors: "Prof. Nadia Mensah · Jonas Richter",
-    citations: "94",
-    views: "2.1k",
-    abstract:
-      "A federated learning pipeline enabling hospitals to collaboratively train diagnostic imaging models without sharing patient-level data.",
-  },
-  {
-    id: "RP-1664",
-    category: "Research Systems",
-    status: "Draft",
-    statusStyle: "text-[var(--badge-slate-text)] bg-[var(--badge-slate)]",
-    title:
-      "Collaborative Knowledge Mapping in Multi-Disciplinary Research Teams",
-    authors: "Elena Park · Samuel Okoye · Mina Ross",
-    citations: "31",
-    views: "640",
-    abstract:
-      "Proposes a shared ontology for linking tasks, datasets, and publications across teams working on overlapping research questions.",
-  },
-  {
-    id: "RP-1530",
-    category: "Cybersecurity",
-    status: "In Revision",
-    statusStyle: "text-[var(--badge-amber-text)] bg-[var(--badge-amber)]",
-    title: "Quantum-Safe Identity Layers for Academic Infrastructure",
-    authors: "Ibrahim Hassan · Dr. Yuki Sato",
-    citations: "67",
-    views: "1.4k",
-    abstract:
-      "Evaluates post-quantum cryptographic identity schemes for securing long-lived academic research infrastructure.",
-  },
-];
+import {
+  getDashboardPapers,
+  getPaperStats,
+} from "../../services/dashboardService.js";
 
 function Chip({ label, active = false, onClick }) {
   return (
@@ -85,21 +37,46 @@ function Chip({ label, active = false, onClick }) {
   );
 }
 
+function getStatusBadgeStyle(status) {
+  const s = (status || "").toLowerCase();
+  if (s.includes("peer") || s.includes("review")) {
+    return "text-[var(--badge-blue-text)] bg-[var(--badge-blue)]";
+  }
+  if (s.includes("ready") || s.includes("publish") || s.includes("approved")) {
+    return "text-[var(--badge-emerald-text)] bg-[var(--badge-emerald)]";
+  }
+  if (s.includes("draft")) {
+    return "text-[var(--badge-slate-text)] bg-[var(--badge-slate)]";
+  }
+  return "text-[var(--badge-amber-text)] bg-[var(--badge-amber)]";
+}
+
+function formatStatus(status) {
+  if (!status) return "Draft";
+  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function Papers() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [category, setCategory] = useState("All");
-  const [year, setYear] = useState("2026");
+  const [department, setDepartment] = useState("All");
+  const [year, setYear] = useState("All");
   const [status, setStatus] = useState(null);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [bookmarkedIds, setBookmarkedIds] = useState(new Set());
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [sortBy, setSortBy] = useState("Most Recent");
   const sortRef = useRef(null);
 
-  // ============================================================
-  // AI STATE
-  // ============================================================
+  // Backend state
+  const [papers, setPapers] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // AI STATE
   const [aiSummaries, setAiSummaries] = useState({});
   const [summarizingPaperId, setSummarizingPaperId] = useState(null);
   const [aiError, setAiError] = useState("");
@@ -111,45 +88,65 @@ export default function Papers() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiPromptLoading, setAiPromptLoading] = useState(false);
 
-  // ============================================================
-  // CLOSE SORT DROPDOWN WHEN CLICKING OUTSIDE
-  // ============================================================
+  // Fetch papers & stats
+  const fetchPapersData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [papersRes, statsRes] = await Promise.allSettled([
+        getDashboardPapers(),
+        getPaperStats(),
+      ]);
+
+      if (papersRes.status === "fulfilled" && papersRes.value?.data) {
+        const rawPapers = Array.isArray(papersRes.value.data)
+          ? papersRes.value.data
+          : papersRes.value.data?.data || [];
+        setPapers(rawPapers);
+      }
+
+      if (statsRes.status === "fulfilled" && statsRes.value?.data) {
+        setStats(statsRes.value.data);
+      }
+    } catch (err) {
+      console.error("Error loading papers:", err);
+      setError(err?.data?.message || err?.message || "Failed to load research papers");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
+    fetchPapersData();
+  }, [fetchPapersData]);
+
+  // Handle outside click for sort dropdown
+  useEffect(() => {
     function handleClickOutside(event) {
-      if (sortRef.current && !sortRef.current.contains(event.target))
+      if (sortRef.current && !sortRef.current.contains(event.target)) {
         setIsSortOpen(false);
+      }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
-  // ============================================================
-  // LOAD DUMMY AI TRENDING TOPICS
-  // ============================================================
-
+  // Load trending topics
   useEffect(() => {
     let isMounted = true;
-
     async function loadTrendingTopics() {
       try {
         setTrendingLoading(true);
         setTrendingError("");
-
         const topics = await getTrendingTopics();
-
         if (isMounted) {
           setTrendingTopics(Array.isArray(topics) ? topics : []);
         }
-      } catch (error) {
+      } catch (err) {
         if (isMounted) {
-          setTrendingError(
-            error?.message || "Unable to load trending research topics."
-          );
+          setTrendingError(err?.message || "Unable to load trending research topics.");
         }
       } finally {
         if (isMounted) {
@@ -157,61 +154,62 @@ export default function Papers() {
         }
       }
     }
-
     loadTrendingTopics();
-
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // ============================================================
-  // BOOKMARK
-  // ============================================================
-
   const toggleBookmark = (id) => {
-    const newSet = new Set(bookmarkedIds);
-
-    if (newSet.has(id)) {
-      newSet.delete(id);
-    } else {
-      newSet.add(id);
-    }
-
-    setBookmarkedIds(newSet);
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
-  // ============================================================
-  // SORT
-  // ============================================================
+  // Filtered & Sorted Papers
+  const filteredPapers = useMemo(() => {
+    return papers.filter((p) => {
+      const titleMatch = !searchQuery.trim() ||
+        p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.abstract?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const catName = p.category?.name || p.research_area?.name || "";
+      const categoryMatch =
+        category === "All" ||
+        catName.toLowerCase().includes(category.toLowerCase());
+
+      const statusMatch =
+        !status ||
+        p.status?.toLowerCase() === status.toLowerCase().replace(/ /g, "_") ||
+        p.status?.toLowerCase() === status.toLowerCase();
+
+      const yearMatch =
+        year === "All" ||
+        (p.created_at && new Date(p.created_at).getFullYear().toString() === year) ||
+        (p.publication_year && p.publication_year.toString() === year);
+
+      return titleMatch && categoryMatch && statusMatch && yearMatch;
+    });
+  }, [papers, searchQuery, category, status, year]);
 
   const sortedPapers = useMemo(() => {
-    const papersCopy = [...papers];
-
+    const list = [...filteredPapers];
     switch (sortBy) {
       case "Most Recent":
-        return papersCopy.sort(
-          (a, b) =>
-            parseInt(b.id.split("-")[1]) - parseInt(a.id.split("-")[1])
-        );
-
+        return list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
       case "Most Cited":
-        return papersCopy.sort(
-          (a, b) => parseInt(b.citations) - parseInt(a.citations)
-        );
-
+        return list.sort((a, b) => (b.citations || b.views || 0) - (a.citations || a.views || 0));
       case "A-Z":
-        return papersCopy.sort((a, b) => a.title.localeCompare(b.title));
-
+        return list.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
       default:
-        return papersCopy;
+        return list;
     }
-  }, [sortBy]);
+  }, [filteredPapers, sortBy]);
 
-  // ============================================================
-  // AI SUMMARIZATION
-  // ============================================================
-
+  // AI Summarization
   const handleSummarize = async (paper) => {
     if (!paper) {
       setAiError("Please select a valid research paper.");
@@ -221,29 +219,26 @@ export default function Papers() {
     try {
       setAiError("");
       setSummarizingPaperId(paper.id);
-
-      const result = await summarizePaper(paper);
+      const result = await summarizePaper({
+        id: paper.id,
+        title: paper.title,
+        abstract: paper.abstract,
+        category: paper.category?.name || paper.research_area?.name,
+      });
 
       setAiSummaries((previous) => ({
         ...previous,
         [paper.id]: result,
       }));
-    } catch (error) {
-      setAiError(
-        error?.message || "Unable to generate an AI summary. Please try again."
-      );
+    } catch (err) {
+      setAiError(err?.message || "Unable to generate an AI summary. Please try again.");
     } finally {
       setSummarizingPaperId(null);
     }
   };
 
-  // ============================================================
-  // AI PROMPT
-  // ============================================================
-
   const handleAiPrompt = async () => {
     const prompt = aiPrompt.trim();
-
     if (!prompt) {
       setAiError("Please enter a question or request for the AI.");
       return;
@@ -252,55 +247,45 @@ export default function Papers() {
     try {
       setAiError("");
       setAiPromptLoading(true);
-
       const normalizedPrompt = prompt.toLowerCase();
 
-      // If the user asks for a topic/recommendation,
-      // refresh the dummy trending topics.
       if (
         normalizedPrompt.includes("topic") ||
         normalizedPrompt.includes("trend") ||
         normalizedPrompt.includes("recommend") ||
-        normalizedPrompt.includes("research idea") ||
-        normalizedPrompt.includes("research ideas")
+        normalizedPrompt.includes("research idea")
       ) {
         const topics = await getTrendingTopics();
-
         setTrendingTopics(Array.isArray(topics) ? topics : []);
-
         setAiPrompt("");
         return;
       }
 
-      // Otherwise, summarize the first available paper.
-      // This keeps the prompt functional without requiring
-      // an external AI service or backend API.
       const paper = sortedPapers[0];
-
       if (!paper) {
         throw new Error("No research paper is available to summarize.");
       }
 
-      const result = await summarizePaper(paper);
+      const result = await summarizePaper({
+        id: paper.id,
+        title: paper.title,
+        abstract: paper.abstract,
+        category: paper.category?.name || paper.research_area?.name,
+      });
 
       setAiSummaries((previous) => ({
         ...previous,
         [paper.id]: result,
       }));
-
       setAiPrompt("");
-    } catch (error) {
-      setAiError(
-        error?.message || "Unable to process your AI request. Please try again."
-      );
+    } catch (err) {
+      setAiError(err?.message || "Unable to process your AI request. Please try again.");
     } finally {
       setAiPromptLoading(false);
     }
   };
 
-  // ============================================================
-  // RENDER
-  // ============================================================
+  const totalPaperCount = stats?.total ?? papers.length;
 
   return (
     <div className="space-y-6 pb-8 w-full min-w-0 relative">
@@ -315,12 +300,13 @@ export default function Papers() {
         </div>
         <button
           onClick={() => navigate("/dashboard/upload")}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-linear-to-r from-indigo-500 to-cyan-400 text-white text-sm font-bold shadow-lg shadow-indigo-400/30 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 active:scale-95 w-full sm:w-auto"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-linear-to-r from-indigo-500 to-cyan-400 text-white text-sm font-bold shadow-lg shadow-indigo-400/30 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 active:scale-95 w-full sm:w-auto cursor-pointer"
         >
           <Plus size={16} /> Upload Paper
         </button>
       </div>
 
+      {/* AI Hero Banner */}
       <div className="rounded-[28px] bg-linear-to-r from-[#161a35] via-[#1b2a4a] to-[#242145] text-white p-5 sm:p-7 shadow-2xl shadow-indigo-900/20 relative overflow-hidden w-full">
         <div className="absolute -top-20 right-1/4 h-56 w-56 rounded-full bg-blue-500/15 blur-3xl" />
         <div className="absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-violet-500/15 blur-3xl" />
@@ -335,14 +321,11 @@ export default function Papers() {
               <div className="text-[10px] font-bold tracking-[0.2em] text-indigo-300 uppercase mb-1">
                 ScholarOS AI
               </div>
-
               <h2 className="text-xl font-extrabold tracking-tight mb-1">
                 Summarize any paper or discover trending topics
               </h2>
-
               <p className="text-sm text-slate-300 leading-relaxed max-w-xl">
-                Paste a paper, pick one from your library, or ask what's
-                gaining traction in your field right now.
+                Paste a paper, pick one from your library, or ask what's gaining traction in your field right now.
               </p>
             </div>
           </div>
@@ -366,7 +349,7 @@ export default function Papers() {
               <button
                 onClick={handleAiPrompt}
                 disabled={aiPromptLoading}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 h-9 w-9 rounded-xl bg-linear-to-br from-indigo-400 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 h-9 w-9 rounded-xl bg-linear-to-br from-indigo-400 to-blue-500 flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
                 aria-label="Submit AI request"
               >
                 {aiPromptLoading ? (
@@ -410,6 +393,8 @@ export default function Papers() {
 
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search papers…"
               className="w-full px-4 py-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all mb-6"
             />
@@ -434,8 +419,13 @@ export default function Papers() {
             </div>
 
             <div className="flex flex-wrap gap-2 mb-6">
-              {["CS", "Medicine", "Engineering"].map((d) => (
-                <Chip key={d} label={d} />
+              {["All", "CS", "Medicine", "Engineering"].map((d) => (
+                <Chip
+                  key={d}
+                  label={d}
+                  active={department === d}
+                  onClick={() => setDepartment(d)}
+                />
               ))}
             </div>
 
@@ -444,7 +434,7 @@ export default function Papers() {
             </div>
 
             <div className="flex flex-wrap gap-2 mb-6">
-              {["2026", "2025", "2024"].map((y) => (
+              {["All", "2026", "2025", "2024"].map((y) => (
                 <Chip
                   key={y}
                   label={y}
@@ -459,7 +449,7 @@ export default function Papers() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {["Draft", "In Revision", "Published"].map((s) => (
+              {["Draft", "In Revision", "Published", "Approved"].map((s) => (
                 <Chip
                   key={s}
                   label={s}
@@ -541,7 +531,7 @@ export default function Papers() {
                         "shrink-0 text-[10px] font-bold px-2.5 py-0.5 rounded-full",
                         topic.trendLabel === "Hot"
                           ? "text-blue-600 bg-blue-50"
-                          : "text-emerald-700 bg-emerald-50"
+                          : "text-emerald-700 bg-emerald-50",
                       )}
                     >
                       {topic.trendLabel}
@@ -555,19 +545,19 @@ export default function Papers() {
 
         {/* RIGHT CONTENT: PAPER CARDS */}
         <div className="space-y-5 w-full min-w-0">
-          {/* Sort */}
+          {/* Header & Sort */}
           <div
             className="flex items-center justify-between relative"
             ref={sortRef}
           >
             <div className="text-sm text-[var(--text-muted)] font-medium">
-              Showing 4 of 10,204 papers
+              Showing {sortedPapers.length} of {totalPaperCount} papers
             </div>
 
             <div className="relative z-20">
               <button
                 onClick={() => setIsSortOpen(!isSortOpen)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)] shadow-sm hover:bg-[var(--bg-surface-elevated)] transition-all duration-200"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-semibold text-[var(--text-secondary)] shadow-sm hover:bg-[var(--bg-surface-elevated)] transition-all duration-200 cursor-pointer"
               >
                 Sort: {sortBy}{" "}
                 <ChevronDown
@@ -585,7 +575,7 @@ export default function Papers() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -5 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 w-40 bg-[var(--bg-surface-elevated)] rounded-xl shadow-xl border border-[var(--border)] p-1.5 overflow-hidden"
+                    className="absolute right-0 top-full mt-2 w-40 bg-[var(--bg-surface-elevated)] rounded-xl shadow-xl border border-[var(--border)] p-1.5 overflow-hidden z-30"
                   >
                     {["Most Recent", "Most Cited", "A-Z"].map((option) => (
                       <button
@@ -594,7 +584,7 @@ export default function Papers() {
                           setSortBy(option);
                           setIsSortOpen(false);
                         }}
-                        className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+                        className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${
                           sortBy === option
                             ? "bg-[var(--badge-blue)] text-[var(--badge-blue-text)] font-semibold"
                             : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]"
@@ -609,162 +599,180 @@ export default function Papers() {
             </div>
           </div>
 
-          {/* PAPER CARDS */}
-          {sortedPapers.map((p) => {
-            const aiSummary = aiSummaries[p.id];
-            const isSummarizing = summarizingPaperId === p.id;
-
-            return (
-              <div
-                key={p.id}
-                className="glass-panel rounded-[28px] p-7 transition-all hover:shadow-lg hover:border-indigo-200/80 group/card w-full"
+          {/* Loading state */}
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="glass-panel rounded-[28px] p-7 space-y-4">
+                <div className="h-6 w-1/4 rounded skeleton" />
+                <div className="h-5 w-3/4 rounded skeleton" />
+                <div className="h-4 w-1/2 rounded skeleton" />
+                <div className="h-12 w-full rounded skeleton" />
+              </div>
+            ))
+          ) : error ? (
+            <div className="glass-panel rounded-[28px] p-10 text-center">
+              <p className="text-rose-500 font-bold mb-4">{error}</p>
+              <button
+                onClick={fetchPapersData}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-linear-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold shadow-md shadow-indigo-500/20 cursor-pointer"
               >
-                <div className="flex flex-col gap-5 sm:flex-row sm:items-start w-full">
-                  {/* PDF ICON */}
-                  <div className="h-14 w-14 shrink-0 rounded-2xl bg-linear-to-br from-indigo-50 to-blue-50 border border-indigo-100/60 flex items-center justify-center text-xs font-extrabold text-indigo-500 shadow-sm">
-                    PDF
-                  </div>
+                <RotateCw size={15} /> Retry
+              </button>
+            </div>
+          ) : sortedPapers.length === 0 ? (
+            <div className="glass-panel rounded-[28px] p-14 text-center text-[var(--text-secondary)]">
+              <FileText className="h-12 w-12 text-indigo-400 mx-auto mb-3 opacity-60" />
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">No Papers Found</h3>
+              <p className="text-sm mt-1">No research papers match your current filters.</p>
+              <button
+                onClick={() => {
+                  setCategory("All");
+                  setDepartment("All");
+                  setYear("All");
+                  setStatus(null);
+                  setSearchQuery("");
+                }}
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-indigo-600 bg-[var(--badge-blue)] hover:opacity-80 transition-opacity cursor-pointer"
+              >
+                Reset Filters
+              </button>
+            </div>
+          ) : (
+            sortedPapers.map((p, idx) => {
+              const aiSummary = aiSummaries[p.id];
+              const isSummarizing = summarizingPaperId === p.id;
+              const displayId = p.id ? `RP-${String(p.id).padStart(4, "0")}` : `RP-${idx + 1}`;
+              const categoryTag = p.category?.name || p.research_area?.name || "Research Systems";
+              const displayStatus = formatStatus(p.status);
+              const statusStyle = getStatusBadgeStyle(p.status);
 
-                  <div className="flex-1 min-w-0 space-y-3">
-                    {/* CATEGORY / STATUS */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-medium px-2.5 py-1 rounded-full text-[var(--muted-foreground)] bg-[var(--muted)]">
-                        {p.category}
-                      </span>
+              const authorsText = p.authors
+                ? Array.isArray(p.authors)
+                  ? p.authors.map((a) => (typeof a === "string" ? a : a.name || a.full_name)).join(" · ")
+                  : p.authors
+                : p.uploaded_by?.full_name || "Author";
 
-                      <span
-                        className={`text-xs font-medium px-2.5 py-1 rounded-full ${p.statusStyle}`}
-                      >
-                        {p.status}
-                      </span>
+              return (
+                <div
+                  key={p.id || idx}
+                  className="glass-panel rounded-[28px] p-7 transition-all hover:shadow-lg hover:border-indigo-200/80 group/card w-full"
+                >
+                  <div className="flex flex-col gap-5 sm:flex-row sm:items-start w-full">
+                    {/* PDF ICON */}
+                    <div className="h-14 w-14 shrink-0 rounded-2xl bg-linear-to-br from-indigo-50 to-blue-50 border border-indigo-100/60 flex items-center justify-center text-xs font-extrabold text-indigo-500 shadow-sm">
+                      PDF
                     </div>
 
-                    {/* TITLE */}
-                    <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight leading-snug hover:text-indigo-600 transition-colors duration-200 cursor-pointer">
-                      {p.title}
-                    </h3>
+                    <div className="flex-1 min-w-0 space-y-3">
+                      {/* CATEGORY / STATUS */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-full text-[var(--muted-foreground)] bg-[var(--muted)]">
+                          {categoryTag}
+                        </span>
 
-                    {/* AUTHORS */}
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-muted)]">
-                      <span>{p.authors}</span>
-                      <span className="text-[var(--text-muted)]">·</span>
-                      <span className="font-mono text-xs">{p.id}</span>
-                    </div>
-
-                    {/* ABSTRACT */}
-                    <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed">
-                      {p.abstract}
-                    </p>
-
-                    {/* AI SUMMARY */}
-                    {isSummarizing ? (
-                      <div className="mt-4 rounded-2xl border-2 border-dashed border-indigo-200/70 bg-linear-to-r from-indigo-50/60 to-violet-50/60 p-5">
-                        <div className="flex items-center gap-2 text-sm font-semibold text-indigo-600">
-                          <RotateCw size={15} className="animate-spin" />
-                          Analyzing paper with ScholarOS AI...
-                        </div>
-
-                        <p className="text-xs text-slate-400 mt-2">
-                          Generating summary, key findings, contributions, and
-                          keywords.
-                        </p>
+                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusStyle}`}>
+                          {displayStatus}
+                        </span>
                       </div>
-                    ) : aiSummary ? (
-                      <div className="mt-4 rounded-2xl border-2 border-dashed border-indigo-200/70 bg-linear-to-r from-indigo-50/60 to-violet-50/60 p-5 relative">
-                        {/* HEADER */}
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-linear-to-r from-indigo-400 to-blue-400 text-white text-xs font-bold shadow-md shadow-indigo-300/40">
-                            <Sparkles
-                              size={12}
-                              className="text-yellow-200"
-                            />
-                            AI Summary
-                          </span>
 
-                          <button
-                            onClick={() => handleSummarize(p)}
-                            disabled={isSummarizing}
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-indigo-600 hover:underline transition-colors duration-200 disabled:opacity-50"
-                          >
-                            <RotateCw
-                              size={12}
-                              className={isSummarizing ? "animate-spin" : ""}
-                            />
-                            Regenerate
-                          </button>
-                        </div>
+                      {/* TITLE */}
+                      <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight leading-snug hover:text-indigo-600 transition-colors duration-200 cursor-pointer">
+                        {p.title}
+                      </h3>
 
-                        {/* SUMMARY */}
-                        <div className="mb-5">
-                          <div className="text-xs font-bold uppercase tracking-[0.12em] text-indigo-500 mb-2">
-                            Summary
+                      {/* AUTHORS */}
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-muted)]">
+                        <span>{authorsText}</span>
+                        <span className="text-[var(--text-muted)]">·</span>
+                        <span className="font-mono text-xs">{displayId}</span>
+                      </div>
+
+                      {/* ABSTRACT */}
+                      <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed">
+                        {p.abstract || "No abstract available for this publication."}
+                      </p>
+
+                      {/* AI SUMMARY */}
+                      {isSummarizing ? (
+                        <div className="mt-4 rounded-2xl border-2 border-dashed border-indigo-200/70 bg-linear-to-r from-indigo-50/60 to-violet-50/60 p-5">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-indigo-600">
+                            <RotateCw size={15} className="animate-spin" />
+                            Analyzing paper with ScholarOS AI...
                           </div>
-
-                          <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed">
-                            {aiSummary.summary}
+                          <p className="text-xs text-slate-400 mt-2">
+                            Generating summary, key findings, contributions, and keywords.
                           </p>
                         </div>
+                      ) : aiSummary ? (
+                        <div className="mt-4 rounded-2xl border-2 border-dashed border-indigo-200/70 bg-linear-to-r from-indigo-50/60 to-violet-50/60 p-5 relative">
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-linear-to-r from-indigo-400 to-blue-400 text-white text-xs font-bold shadow-md shadow-indigo-300/40">
+                              <Sparkles size={12} className="text-yellow-200" />
+                              AI Summary
+                            </span>
 
-                        {/* KEY FINDINGS */}
-                        {Array.isArray(aiSummary.keyFindings) &&
-                          aiSummary.keyFindings.length > 0 && (
+                            <button
+                              onClick={() => handleSummarize(p)}
+                              disabled={isSummarizing}
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-indigo-600 hover:underline transition-colors duration-200 disabled:opacity-50 cursor-pointer"
+                            >
+                              <RotateCw size={12} className={isSummarizing ? "animate-spin" : ""} />
+                              Regenerate
+                            </button>
+                          </div>
+
+                          <div className="mb-5">
+                            <div className="text-xs font-bold uppercase tracking-[0.12em] text-indigo-500 mb-2">
+                              Summary
+                            </div>
+                            <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed">
+                              {aiSummary.summary}
+                            </p>
+                          </div>
+
+                          {Array.isArray(aiSummary.keyFindings) && aiSummary.keyFindings.length > 0 && (
                             <div className="mb-5">
                               <div className="text-xs font-bold uppercase tracking-[0.12em] text-indigo-500 mb-2">
                                 Key Findings
                               </div>
-
                               <ul className="space-y-2">
-                                {aiSummary.keyFindings.map(
-                                  (finding, findingIndex) => (
-                                    <li
-                                      key={findingIndex}
-                                      className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-relaxed"
-                                    >
-                                      <span className="text-indigo-400 mt-1">
-                                        •
-                                      </span>
-                                      <span>{finding}</span>
-                                    </li>
-                                  )
-                                )}
+                                {aiSummary.keyFindings.map((finding, findingIndex) => (
+                                  <li
+                                    key={findingIndex}
+                                    className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-relaxed"
+                                  >
+                                    <span className="text-indigo-400 mt-1">•</span>
+                                    <span>{finding}</span>
+                                  </li>
+                                ))}
                               </ul>
                             </div>
                           )}
 
-                        {/* CONTRIBUTIONS */}
-                        {Array.isArray(aiSummary.contributions) &&
-                          aiSummary.contributions.length > 0 && (
+                          {Array.isArray(aiSummary.contributions) && aiSummary.contributions.length > 0 && (
                             <div className="mb-5">
                               <div className="text-xs font-bold uppercase tracking-[0.12em] text-indigo-500 mb-2">
                                 Main Contributions
                               </div>
-
                               <ul className="space-y-2">
-                                {aiSummary.contributions.map(
-                                  (contribution, contributionIndex) => (
-                                    <li
-                                      key={contributionIndex}
-                                      className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-relaxed"
-                                    >
-                                      <span className="text-indigo-400 mt-1">
-                                        •
-                                      </span>
-                                      <span>{contribution}</span>
-                                    </li>
-                                  )
-                                )}
+                                {aiSummary.contributions.map((contribution, contributionIndex) => (
+                                  <li
+                                    key={contributionIndex}
+                                    className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-relaxed"
+                                  >
+                                    <span className="text-indigo-400 mt-1">•</span>
+                                    <span>{contribution}</span>
+                                  </li>
+                                ))}
                               </ul>
                             </div>
                           )}
 
-                        {/* KEYWORDS */}
-                        {Array.isArray(aiSummary.keywords) &&
-                          aiSummary.keywords.length > 0 && (
+                          {Array.isArray(aiSummary.keywords) && aiSummary.keywords.length > 0 && (
                             <div>
                               <div className="text-xs font-bold uppercase tracking-[0.12em] text-indigo-500 mb-2">
                                 Extracted Keywords
                               </div>
-
                               <div className="flex flex-wrap gap-2">
                                 {aiSummary.keywords.map((keyword) => (
                                   <span
@@ -777,60 +785,58 @@ export default function Papers() {
                               </div>
                             </div>
                           )}
-                      </div>
-                    ) : (
-                      /* SUMMARIZE BUTTON */
-                      <button
-                        onClick={() => handleSummarize(p)}
-                        disabled={summarizingPaperId !== null}
-                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)] hover:text-indigo-600 hover:underline transition-colors duration-200 mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Sparkles size={14} className="text-amber-400" />
-                        Summarize with AI
-                      </button>
-                    )}
-                  </div>
-
-                  {/* STATS / BOOKMARK */}
-                  <div className="flex shrink-0 items-center gap-6 pl-0 sm:pl-4">
-                    <div className="text-center">
-                      <div className="text-xl font-extrabold text-[var(--text-primary)]">
-                        {p.citations}
-                      </div>
-
-                      <div className="text-[10px] text-[var(--text-muted)] tracking-[0.08em] uppercase">
-                        Citations
-                      </div>
-                    </div>
-
-                    <div className="text-center">
-                      <div className="text-xl font-extrabold text-[var(--text-primary)]">
-                        {p.views}
-                      </div>
-
-                      <div className="text-[10px] text-[var(--text-muted)] tracking-[0.08em] uppercase">
-                        Views
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => toggleBookmark(p.id)}
-                      className="h-9 w-9 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center"
-                    >
-                      {bookmarkedIds.has(p.id) ? (
-                        <BookmarkCheck size={16} className="text-indigo-500" />
+                        </div>
                       ) : (
-                        <Bookmark
-                          size={16}
-                          className="text-[var(--text-muted)] hover:text-indigo-500 transition-colors duration-200"
-                        />
+                        <button
+                          onClick={() => handleSummarize(p)}
+                          disabled={summarizingPaperId !== null}
+                          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)] hover:text-indigo-600 hover:underline transition-colors duration-200 mt-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          <Sparkles size={14} className="text-amber-400" />
+                          Summarize with AI
+                        </button>
                       )}
-                    </button>
+                    </div>
+
+                    {/* STATS / BOOKMARK */}
+                    <div className="flex shrink-0 items-center gap-6 pl-0 sm:pl-4">
+                      <div className="text-center">
+                        <div className="text-xl font-extrabold text-[var(--text-primary)]">
+                          {p.citations ?? 0}
+                        </div>
+                        <div className="text-[10px] text-[var(--text-muted)] tracking-[0.08em] uppercase">
+                          Citations
+                        </div>
+                      </div>
+
+                      <div className="text-center">
+                        <div className="text-xl font-extrabold text-[var(--text-primary)]">
+                          {p.views ?? p.downloads ?? 0}
+                        </div>
+                        <div className="text-[10px] text-[var(--text-muted)] tracking-[0.08em] uppercase">
+                          Views
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => toggleBookmark(p.id)}
+                        className="h-9 w-9 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center cursor-pointer"
+                      >
+                        {bookmarkedIds.has(p.id) ? (
+                          <BookmarkCheck size={16} className="text-indigo-500" />
+                        ) : (
+                          <Bookmark
+                            size={16}
+                            className="text-[var(--text-muted)] hover:text-indigo-500 transition-colors duration-200"
+                          />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
     </div>

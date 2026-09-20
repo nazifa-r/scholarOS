@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Bell,
   BookOpenText,
@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "../utils/cn.js";
 import { useNotifications } from "../contexts/NotificationContext.jsx";
+import { getCurrentUser } from "../services/dashboardService.js";
 
 const workspaceItems = [
   { label: "Overview", icon: LayoutDashboard, to: "/dashboard" },
@@ -27,12 +28,48 @@ const accountItems = [
   { label: "Settings", icon: Settings, to: "/dashboard/settings" },
 ];
 
+function getInitials(name = "") {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "U";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
 export default function DashboardShell() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef(null);
-  const { unreadCount } = useNotifications();
+  const { notifications, unreadCount, markAsRead } = useNotifications();
+
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem("scholaros_user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadUser() {
+      try {
+        const response = await getCurrentUser();
+        if (isMounted && response?.data) {
+          setCurrentUser(response.data);
+          localStorage.setItem("scholaros_user", JSON.stringify(response.data));
+        }
+      } catch (e) {
+        // Fallback to local storage if present
+      }
+    }
+    loadUser();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -51,6 +88,7 @@ export default function DashboardShell() {
   }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem("scholaros_token");
     localStorage.removeItem("scholaros_user");
     window.location.href = "/";
   };
@@ -63,8 +101,12 @@ export default function DashboardShell() {
     if (pathname === "/dashboard/notifications") return "Notifications";
     if (pathname === "/dashboard/settings") return "Settings";
     if (pathname === "/dashboard/profile") return "Profile";
+    if (pathname === "/dashboard/upload") return "Upload Paper";
     return "Dashboard";
   };
+
+  const userName = currentUser?.full_name || "Dr. Leila Morgan";
+  const userInitials = getInitials(userName);
 
   return (
     <div className="min-h-screen bg-[var(--bg-app)] flex text-[var(--text-primary)]">
@@ -174,11 +216,11 @@ export default function DashboardShell() {
               className="flex flex-1 items-center gap-3 min-w-0 hover:opacity-90 transition-opacity"
             >
               <div className="h-9 w-9 rounded-full bg-linear-to-br from-indigo-400 to-violet-400 flex items-center justify-center shadow-md shadow-indigo-400/20 text-white text-xs font-bold shrink-0">
-                LM
+                {userInitials}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold text-white truncate">
-                  Dr. Leila Morgan
+                  {userName}
                 </div>
                 <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -188,7 +230,7 @@ export default function DashboardShell() {
             </Link>
             <button
               onClick={handleLogout}
-              className="text-slate-500 hover:text-red-400 transition-colors shrink-0"
+              className="text-slate-500 hover:text-red-400 transition-colors shrink-0 cursor-pointer"
               title="Logout"
             >
               <LogOut size={16} />
@@ -217,6 +259,11 @@ export default function DashboardShell() {
                 type="text"
                 placeholder="Search papers, projects..."
                 className="w-full pl-10 pr-4 py-2.5 rounded-full bg-[var(--bg-surface-elevated)] border border-[var(--border)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-transparent transition-all"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && e.target.value.trim()) {
+                    navigate(`/dashboard/papers?search=${encodeURIComponent(e.target.value.trim())}`);
+                  }
+                }}
               />
             </div>
           </div>
@@ -228,7 +275,7 @@ export default function DashboardShell() {
                   setIsNotifOpen(!isNotifOpen);
                   window.dispatchEvent(new CustomEvent("closeFilter"));
                 }}
-                className="h-10 w-10 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] flex items-center justify-center shadow-sm hover:shadow-md transition-shadow text-[var(--text-muted)]"
+                className="h-10 w-10 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] flex items-center justify-center shadow-sm hover:shadow-md transition-shadow text-[var(--text-muted)] cursor-pointer"
               >
                 <Bell size={18} />
               </button>
@@ -245,36 +292,55 @@ export default function DashboardShell() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -5 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] max-w-[320px] sm:w-72 bg-[var(--surface-4)] rounded-2xl shadow-xl border border-[var(--border)] p-4 z-40"
+                    className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] max-w-[320px] sm:w-80 bg-[var(--bg-surface-elevated)] rounded-2xl shadow-xl border border-[var(--border)] p-4 z-40"
                   >
-                    <div className="text-sm font-bold text-[var(--text-primary)] mb-3">
-                      Notifications
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-sm font-bold text-[var(--text-primary)]">
+                        Notifications
+                      </div>
+                      <Link
+                        to="/dashboard/notifications"
+                        onClick={() => setIsNotifOpen(false)}
+                        className="text-xs font-semibold text-indigo-500 hover:text-indigo-600 transition-colors"
+                      >
+                        View all
+                      </Link>
                     </div>
-                    <div className="space-y-3">
-                      <div className="p-3 bg-[var(--badge-blue)] rounded-lg border border-[var(--border)]">
-                        <div className="text-sm font-medium text-[var(--text-primary)]">
-                          New review added
+                    <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                      {notifications.length > 0 ? (
+                        notifications.slice(0, 4).map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() => {
+                              markAsRead(item.id);
+                              if (item.link) {
+                                navigate(item.link);
+                                setIsNotifOpen(false);
+                              }
+                            }}
+                            className={cn(
+                              "p-3 rounded-xl border border-[var(--border)] transition-colors cursor-pointer",
+                              item.unread
+                                ? "bg-[var(--badge-blue)] hover:bg-[var(--bg-surface)]"
+                                : "hover:bg-[var(--bg-surface)] bg-transparent"
+                            )}
+                          >
+                            <div className="text-sm font-medium text-[var(--text-primary)] leading-tight">
+                              {item.title}
+                            </div>
+                            <div className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">
+                              {item.description}
+                            </div>
+                            <div className="text-[10px] text-[var(--text-muted)] mt-1.5">
+                              {item.time}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-6 text-center text-xs text-[var(--text-muted)]">
+                          No notifications yet.
                         </div>
-                        <div className="text-xs text-[var(--text-secondary)] mt-0.5">
-                          Prof. Mensah commented on Methods.
-                        </div>
-                      </div>
-                      <div className="p-3 hover:bg-[var(--bg-surface-elevated)] rounded-lg transition-colors cursor-pointer">
-                        <div className="text-sm font-medium text-[var(--text-primary)]">
-                          Deadline approaching
-                        </div>
-                        <div className="text-xs text-[var(--text-secondary)] mt-0.5">
-                          BlueGrid Climate Archive due in 5d.
-                        </div>
-                      </div>
-                      <div className="p-3 hover:bg-[var(--bg-surface-elevated)] rounded-lg transition-colors cursor-pointer">
-                        <div className="text-sm font-medium text-[var(--text-primary)]">
-                          Milestone completed
-                        </div>
-                        <div className="text-xs text-[var(--text-secondary)] mt-0.5">
-                          128 citations verified.
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -286,11 +352,11 @@ export default function DashboardShell() {
               className="flex items-center gap-3 hover:opacity-80 transition-opacity shrink-0"
             >
               <div className="h-10 w-10 rounded-full bg-linear-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center shadow-md shadow-indigo-400/20 text-sm font-bold shrink-0">
-                LM
+                {userInitials}
               </div>
               <div className="hidden sm:block pl-1">
                 <div className="text-sm font-bold text-[var(--text-primary)] leading-tight">
-                  Leila Morgan
+                  {userName}
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 font-medium">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />

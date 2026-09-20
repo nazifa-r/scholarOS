@@ -1,121 +1,183 @@
-import { createContext, useContext, useState } from "react";
-
-const initialNotifications = [
-  {
-    id: 1,
-    group: "Today",
-    category: "Mentions",
-    title: "New review note added",
-    description:
-      'Prof. Nadia Mensah commented on the Methods section of "Federated Medical Imaging Pipelines."',
-    time: "2m ago",
-    tag: "Federated Imaging",
-    icon: "info",
-    unread: true,
-    priority: "High",
-    sender: "Prof. Nadia Mensah",
-  },
-  {
-    id: 2,
-    group: "Today",
-    category: "Tasks",
-    title: "Milestone completed",
-    description:
-      'Citation verification finished for 128 references in "Adaptive Graph Models."',
-    time: "1h ago",
-    tag: "BlueGrid Archive",
-    icon: "success",
-    unread: true,
-    priority: "Low",
-    sender: "System",
-  },
-  {
-    id: 3,
-    group: "Today",
-    category: "Papers",
-    title: "Jonas Richter uploaded a new paper",
-    description:
-      '"Federated Medical Imaging Pipelines for Cross-Institutional Diagnostics" was submitted for review.',
-    time: "2h ago",
-    icon: "JR",
-    unread: true,
-    priority: "Medium",
-    sender: "Jonas Richter",
-  },
-  {
-    id: 4,
-    group: "Today",
-    category: "Tasks",
-    title: "Submission deadline approaching",
-    description:
-      'BlueGrid Climate Archive milestone "Paper Draft" is due in 5 days.',
-    time: "3h ago",
-    tag: "Deadline",
-    icon: "warning",
-    unread: true,
-    priority: "High",
-    sender: "System",
-  },
-  {
-    id: 5,
-    group: "Yesterday",
-    category: "Tasks",
-    title: "Elena Park completed a task",
-    description:
-      '"Prepare collaborator invite list" was marked complete on Civic Insight Observatory.',
-    time: "1d ago",
-    icon: "EP",
-    unread: true,
-    priority: "Medium",
-    sender: "Elena Park",
-  },
-  {
-    id: 6,
-    group: "Yesterday",
-    category: "Mentions",
-    title: "Mina Ross left a comment",
-    description:
-      '"Can we align this with the Q3 dataset schema before merging?" — on Adaptive Graph Models.',
-    time: "1d ago",
-    icon: "MR",
-    unread: false,
-    priority: "Low",
-    sender: "Mina Ross",
-  },
-  {
-    id: 7,
-    group: "Yesterday",
-    category: "Mentions",
-    title: "Project invitation accepted",
-    description:
-      "Aarav Patel joined BlueGrid Climate Archive as a contributor.",
-    time: "1d ago",
-    icon: "info",
-    unread: false,
-    priority: "Low",
-    sender: "System",
-  },
-];
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  getNotifications,
+  getNotificationCount,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  deleteNotification as apiDeleteNotification,
+} from "../services/dashboardService.js";
 
 const NotificationContext = createContext();
 
+function formatTimeAgo(isoString) {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+
+  if (seconds < 60) return "Just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "1d ago";
+  if (days < 30) return `${days}d ago`;
+  return date.toLocaleDateString();
+}
+
+function getNotificationGroup(isoString) {
+  if (!isoString) return "Today";
+  const date = new Date(isoString);
+  const now = new Date();
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  if (isToday) return "Today";
+
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    date.getDate() === yesterday.getDate() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getFullYear() === yesterday.getFullYear();
+
+  if (isYesterday) return "Yesterday";
+  return "Older";
+}
+
+function normalizeNotification(n) {
+  const isRead = Boolean(n.is_read || n.read_at);
+  const createdAt = n.created_at || new Date().toISOString();
+  const group = getNotificationGroup(createdAt);
+  const time = formatTimeAgo(createdAt);
+
+  // Map category based on type or entity
+  let category = "Mentions";
+  const typeLower = (n.type || "").toLowerCase();
+  if (typeLower.includes("task")) category = "Tasks";
+  else if (typeLower.includes("paper") || typeLower.includes("submission")) category = "Papers";
+  else if (typeLower.includes("mention") || typeLower.includes("comment")) category = "Mentions";
+  else category = "Tasks";
+
+  const initials = n.sender?.full_name
+    ? n.sender.full_name
+        .split(" ")
+        .map((s) => s[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "SY";
+
+  return {
+    id: n.id,
+    group,
+    category,
+    title: n.title || (n.type ? n.type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Notification"),
+    description: n.message || n.description || "",
+    time,
+    tag: n.link ? n.link.split("/").filter(Boolean).pop() : undefined,
+    icon: n.icon || (n.sender ? initials : "info"),
+    unread: !isRead,
+    is_read: isRead,
+    priority: n.priority || (n.message && n.message.toLowerCase().includes("deadline") ? "High" : "Medium"),
+    sender: n.sender?.full_name || "System",
+    link: n.link || null,
+    created_at: createdAt,
+  };
+}
+
 export const NotificationProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem("scholaros_token");
+      if (!token) {
+        setNotifications([]);
+        setUnreadCount(0);
+        return;
+      }
 
-  const markAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: false } : n)),
-    );
+      const [listRes, countRes] = await Promise.allSettled([
+        getNotifications(),
+        getNotificationCount(),
+      ]);
+
+      if (listRes.status === "fulfilled" && listRes.value?.data) {
+        const rawItems = Array.isArray(listRes.value.data)
+          ? listRes.value.data
+          : listRes.value.data?.data || [];
+        setNotifications(rawItems.map(normalizeNotification));
+      }
+
+      if (countRes.status === "fulfilled" && countRes.value?.data) {
+        setUnreadCount(countRes.value.data.unread ?? 0);
+      } else if (listRes.status === "fulfilled" && listRes.value?.data) {
+        const rawItems = Array.isArray(listRes.value.data)
+          ? listRes.value.data
+          : listRes.value.data?.data || [];
+        setUnreadCount(rawItems.filter((item) => !item.is_read).length);
+      }
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+      setError(err?.data?.message || err?.message || "Failed to load notifications");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  const markAsRead = async (id) => {
+    try {
+      // Optimistic update
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, unread: false, is_read: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+
+      await markNotificationAsRead(id);
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  const markAllAsRead = async () => {
+    try {
+      // Optimistic update
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, unread: false, is_read: true }))
+      );
+      setUnreadCount(0);
+
+      await markAllNotificationsAsRead();
+    } catch (err) {
+      console.error("Failed to mark all notifications as read:", err);
+    }
   };
 
-  const deleteNotification = (id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const deleteNotification = async (id) => {
+    try {
+      const target = notifications.find((n) => n.id === id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      if (target?.unread) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+
+      await apiDeleteNotification(id);
+    } catch (err) {
+      console.error("Failed to delete notification:", err);
+    }
   };
 
   return (
@@ -123,9 +185,12 @@ export const NotificationProvider = ({ children }) => {
       value={{
         notifications,
         unreadCount,
+        loading,
+        error,
         markAsRead,
         markAllAsRead,
         deleteNotification,
+        refetch: fetchNotifications,
       }}
     >
       {children}
