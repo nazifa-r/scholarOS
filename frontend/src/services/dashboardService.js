@@ -55,6 +55,38 @@ export async function getProjectDetails(id) {
 }
 
 /**
+ * Create a new project
+ * POST /api/v1/projects
+ */
+export async function createProject(projectData) {
+  return await apiRequest("/v1/projects", {
+    method: "POST",
+    body: JSON.stringify(projectData),
+  });
+}
+
+/**
+ * Update an existing project
+ * PUT /api/v1/projects/{id}
+ */
+export async function updateProject(projectId, projectData) {
+  return await apiRequest(`/v1/projects/${projectId}`, {
+    method: "PUT",
+    body: JSON.stringify(projectData),
+  });
+}
+
+/**
+ * Delete a project
+ * DELETE /api/v1/projects/{id}
+ */
+export async function deleteProject(projectId) {
+  return await apiRequest(`/v1/projects/${projectId}`, {
+    method: "DELETE",
+  });
+}
+
+/**
  * Get files for a specific project
  * GET /api/v1/projects/{projectId}/files
  */
@@ -84,6 +116,35 @@ export async function getProjectTasks(projectId) {
  */
 export async function getProjectMembers(projectId) {
   return await apiRequest(`/v1/projects/${projectId}/members`);
+}
+
+/**
+ * Add a member to a project
+ * POST /api/v1/projects/{projectId}/members
+ */
+export async function addProjectMember(projectId, memberData) {
+  return await apiRequest(`/v1/projects/${projectId}/members`, {
+    method: "POST",
+    body: JSON.stringify(memberData),
+  });
+}
+
+/**
+ * Remove a member from a project
+ * DELETE /api/v1/projects/{projectId}/members/{memberId}
+ */
+export async function removeProjectMember(projectId, memberId) {
+  return await apiRequest(`/v1/projects/${projectId}/members/${memberId}`, {
+    method: "DELETE",
+  });
+}
+
+/**
+ * Get all research areas
+ * GET /api/v1/research-areas
+ */
+export async function getResearchAreas() {
+  return await apiRequest("/v1/research-areas");
 }
 
 /**
