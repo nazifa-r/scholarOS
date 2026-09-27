@@ -55,12 +55,17 @@ function normalizeNotification(n) {
   const time = formatTimeAgo(createdAt);
 
   // Map category based on type or entity
-  let category = "Mentions";
+  let category = "Tasks";
   const typeLower = (n.type || "").toLowerCase();
-  if (typeLower.includes("task")) category = "Tasks";
-  else if (typeLower.includes("paper") || typeLower.includes("submission")) category = "Papers";
-  else if (typeLower.includes("mention") || typeLower.includes("comment")) category = "Mentions";
-  else category = "Tasks";
+  if (typeLower.includes("task") || typeLower.includes("project")) {
+    category = "Tasks";
+  } else if (typeLower.includes("paper") || typeLower.includes("submission")) {
+    category = "Papers";
+  } else if (typeLower.includes("mention") || typeLower.includes("comment")) {
+    category = "Mentions";
+  } else {
+    category = "Tasks";
+  }
 
   const initials = n.sender?.full_name
     ? n.sender.full_name
@@ -69,21 +74,40 @@ function normalizeNotification(n) {
         .slice(0, 2)
         .join("")
         .toUpperCase()
-    : "SY";
+    : "SO";
+
+  let iconType = "info";
+  if (typeLower.includes("completed") || typeLower.includes("approved")) {
+    iconType = "success";
+  } else if (typeLower.includes("rejected") || typeLower.includes("deadline")) {
+    iconType = "warning";
+  } else if (n.sender?.full_name) {
+    iconType = initials;
+  }
 
   return {
     id: n.id,
     group,
     category,
-    title: n.title || (n.type ? n.type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Notification"),
+    title:
+      n.title ||
+      (n.type
+        ? n.type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+        : "Notification"),
     description: n.message || n.description || "",
     time,
     tag: n.link ? n.link.split("/").filter(Boolean).pop() : undefined,
-    icon: n.icon || (n.sender ? initials : "info"),
+    icon: iconType,
     unread: !isRead,
     is_read: isRead,
-    priority: n.priority || (n.message && n.message.toLowerCase().includes("deadline") ? "High" : "Medium"),
-    sender: n.sender?.full_name || "System",
+    priority:
+      n.priority ||
+      (n.message &&
+      (n.message.toLowerCase().includes("deadline") ||
+        n.message.toLowerCase().includes("urgent"))
+        ? "High"
+        : "Medium"),
+    sender: n.sender?.full_name || "ScholarOS System",
     link: n.link || null,
     created_at: createdAt,
   };
@@ -149,6 +173,8 @@ export const NotificationProvider = ({ children }) => {
       await markNotificationAsRead(id);
     } catch (err) {
       console.error("Failed to mark notification as read:", err);
+      // Re-fetch to sync if needed
+      fetchNotifications();
     }
   };
 
@@ -163,6 +189,7 @@ export const NotificationProvider = ({ children }) => {
       await markAllNotificationsAsRead();
     } catch (err) {
       console.error("Failed to mark all notifications as read:", err);
+      fetchNotifications();
     }
   };
 
@@ -177,6 +204,7 @@ export const NotificationProvider = ({ children }) => {
       await apiDeleteNotification(id);
     } catch (err) {
       console.error("Failed to delete notification:", err);
+      fetchNotifications();
     }
   };
 
@@ -198,4 +226,19 @@ export const NotificationProvider = ({ children }) => {
   );
 };
 
-export const useNotifications = () => useContext(NotificationContext);
+export const useNotifications = () => {
+  const context = useContext(NotificationContext);
+  if (!context) {
+    return {
+      notifications: [],
+      unreadCount: 0,
+      loading: false,
+      error: null,
+      markAsRead: () => {},
+      markAllAsRead: () => {},
+      deleteNotification: () => {},
+      refetch: () => {},
+    };
+  }
+  return context;
+};

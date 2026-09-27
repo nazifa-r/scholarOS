@@ -1,34 +1,18 @@
 import { useState, useMemo } from "react";
-import { AlertTriangle, Check, Info, Trash2, ArrowUpRight, RotateCw } from "lucide-react";
-import { motion } from "framer-motion";
+import { AlertTriangle, Check, Info, Trash2, ArrowUpRight, RotateCw, Bell } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "../../contexts/NotificationContext.jsx";
 import { cn } from "../../utils/cn.js";
 
 const priorityStyles = {
-  High: "bg-red-50 text-red-700 border-red-100",
-  Medium: "bg-amber-50 text-amber-700 border-amber-100",
-  Low: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  High: "bg-red-500/10 text-red-400 border-red-500/20",
+  Medium: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  Low: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
 };
 
 export default function Notifications() {
   const navigate = useNavigate();
-  let context;
-  try {
-    context = useNotifications();
-  } catch {
-    return (
-      <div className="flex h-64 items-center justify-center text-center text-slate-600">
-        <div>
-          <h2 className="text-xl font-bold text-red-500">Provider Missing</h2>
-          <p className="mt-2">
-            NotificationContext not found.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const {
     notifications,
     unreadCount,
@@ -38,7 +22,7 @@ export default function Notifications() {
     markAllAsRead,
     deleteNotification,
     refetch,
-  } = context;
+  } = useNotifications();
 
   const [activeFilter, setActiveFilter] = useState("All");
 
@@ -58,15 +42,23 @@ export default function Notifications() {
     return notifications.filter((n) => n.category === activeFilter);
   }, [activeFilter, notifications]);
 
-  const today = filteredNotifications.filter((n) => n.group === "Today");
-  const yesterday = filteredNotifications.filter((n) => n.group === "Yesterday");
-  const older = filteredNotifications.filter((n) => n.group === "Older");
+  const today = useMemo(
+    () => filteredNotifications.filter((n) => n.group === "Today"),
+    [filteredNotifications]
+  );
+  const yesterday = useMemo(
+    () => filteredNotifications.filter((n) => n.group === "Yesterday"),
+    [filteredNotifications]
+  );
+  const older = useMemo(
+    () => filteredNotifications.filter((n) => n.group === "Older"),
+    [filteredNotifications]
+  );
 
   const handleViewRelated = (item) => {
+    markAsRead(item.id);
     if (item.link) {
       navigate(item.link);
-    } else {
-      markAsRead(item.id);
     }
   };
 
@@ -77,9 +69,12 @@ export default function Notifications() {
       transition={{ duration: 0.4 }}
       className="space-y-6 pb-8 w-full relative"
     >
+      {/* Header and Top Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <div className="mb-1 text-xs font-medium text-[var(--text-muted)]">Updates</div>
+          <div className="mb-1 text-xs font-medium text-[var(--text-muted)]">
+            Updates
+          </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
             Notifications
           </h1>
@@ -96,21 +91,30 @@ export default function Notifications() {
           <button
             onClick={markAllAsRead}
             disabled={unreadCount === 0 || loading}
-            className="h-11 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)] active:scale-[0.98] disabled:cursor-default disabled:opacity-50 cursor-pointer"
+            className="h-11 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-6 text-sm font-bold text-[var(--text-secondary)] shadow-sm transition hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)] active:scale-[0.98] disabled:cursor-default disabled:opacity-40 cursor-pointer"
           >
             Mark all as read
           </button>
         </div>
       </div>
 
+      {/* Error Banner */}
       {error && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-600 flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={refetch} className="underline font-bold">Retry</button>
+        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-400 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={refetch}
+            className="underline font-bold text-rose-300 hover:text-rose-100 cursor-pointer"
+          >
+            Retry
+          </button>
         </div>
       )}
 
-      {/* Responsive Filter Tabs */}
+      {/* Filter Tabs */}
       <div className="glass-panel flex items-center rounded-2xl p-1.5 shadow-sm overflow-x-auto max-w-full">
         {Object.keys(tabTotals).map((filter) => {
           const isActive = filter === activeFilter;
@@ -122,17 +126,17 @@ export default function Notifications() {
               className={cn(
                 "flex h-10 min-w-[100px] shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-all duration-200 active:scale-[0.98] cursor-pointer",
                 isActive
-                  ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-400/30"
-                  : "text-slate-500 hover:bg-white/70 hover:text-slate-800",
+                  ? "bg-linear-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-400/30"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-primary)]"
               )}
             >
-              {filter}
+              <span>{filter}</span>
               <span
                 className={cn(
                   "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold",
                   isActive
                     ? "bg-white/20 text-white"
-                    : "bg-slate-200/80 text-slate-500",
+                    : "bg-[var(--muted)] text-[var(--muted-foreground)]"
                 )}
               >
                 {count}
@@ -142,6 +146,7 @@ export default function Notifications() {
         })}
       </div>
 
+      {/* Notifications List / Loading / Empty */}
       <section className="glass-panel rounded-[28px] p-6">
         {loading ? (
           <div className="space-y-4">
@@ -187,20 +192,20 @@ export default function Notifications() {
             )}
           </div>
         ) : (
-          <div className="flex min-h-64 flex-col items-center justify-center text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-indigo-100 to-cyan-100 text-indigo-500">
-              <Check size={22} />
+          <div className="flex min-h-64 flex-col items-center justify-center text-center py-12">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400">
+              <Check size={26} strokeWidth={2.5} />
             </div>
-            <h2 className="mt-4 text-lg font-bold text-[var(--text-primary)]">
+            <h2 className="mt-4 text-xl font-bold text-[var(--text-primary)]">
               You're all caught up
             </h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              There are no notifications in this view.
+            <p className="mt-1 text-sm text-[var(--text-secondary)] max-w-sm">
+              There are no notifications matching the {activeFilter.toLowerCase()} filter.
             </p>
             {activeFilter !== "All" && (
               <button
                 onClick={() => setActiveFilter("All")}
-                className="mt-5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-400/30 transition hover:-translate-y-0.5 cursor-pointer"
+                className="mt-5 rounded-xl bg-linear-to-r from-indigo-500 to-violet-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 cursor-pointer"
               >
                 View all notifications
               </button>
@@ -219,69 +224,78 @@ function NotificationGroup({ title, notifications, onRead, onDelete, onView }) {
         {title}
       </h2>
       <div className="space-y-3">
-        {notifications.map((notification) => (
-          <div
-            key={notification.id}
-            onClick={() => onRead(notification.id)}
-            className={cn(
-              "group glass-panel flex w-full items-start gap-4 rounded-2xl p-4 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-lg hover:border-indigo-200/80 cursor-pointer",
-              notification.unread ? "border-indigo-100/40 bg-indigo-50/55" : "",
-            )}
-          >
-            <NotificationIcon icon={notification.icon} />
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-bold text-[var(--text-primary)]">
-                {notification.title}
-              </h3>
-              <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">
-                {notification.description}
-              </p>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                {notification.tag && (
-                  <span className="inline-flex rounded-lg bg-[var(--bg-surface)] px-2.5 py-1 text-[10px] font-bold text-[var(--text-muted)]">
-                    {notification.tag}
-                  </span>
-                )}
-                {notification.priority && (
-                  <span
-                    className={cn(
-                      "inline-flex rounded-lg border px-2.5 py-1 text-[10px] font-bold",
-                      priorityStyles[notification.priority] || priorityStyles.Medium,
-                    )}
-                  >
-                    {notification.priority}
-                  </span>
-                )}
-                <span className="text-xs text-[var(--text-secondary)]">
-                  {notification.time}
-                </span>
-                {notification.unread && (
-                  <span className="h-2 w-2 rounded-full bg-linear-to-br from-indigo-500 to-cyan-400" />
-                )}
-              </div>
-            </div>
-
-            <div
-              className="flex shrink-0 flex-col gap-2 pt-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200"
-              onClick={(e) => e.stopPropagation()}
+        <AnimatePresence initial={false}>
+          {notifications.map((notification) => (
+            <motion.div
+              key={notification.id}
+              layout
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => onRead(notification.id)}
+              className={cn(
+                "group glass-panel flex w-full items-start gap-4 rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:border-indigo-500/30 cursor-pointer",
+                notification.unread
+                  ? "border-indigo-500/30 bg-indigo-500/5 shadow-xs"
+                  : ""
+              )}
             >
-              <button
-                onClick={() => onView(notification)}
-                className="rounded-full p-1.5 text-[var(--text-muted)] transition hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer"
-                title="View related item"
+              <NotificationIcon icon={notification.icon} />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                  {notification.title}
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">
+                  {notification.description}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {notification.tag && (
+                    <span className="inline-flex rounded-lg bg-[var(--bg-surface)] px-2.5 py-0.5 text-[10px] font-bold text-[var(--text-muted)] border border-[var(--border)]">
+                      {notification.tag}
+                    </span>
+                  )}
+                  {notification.priority && (
+                    <span
+                      className={cn(
+                        "inline-flex rounded-lg border px-2.5 py-0.5 text-[10px] font-bold",
+                        priorityStyles[notification.priority] || priorityStyles.Medium
+                      )}
+                    >
+                      {notification.priority}
+                    </span>
+                  )}
+                  <span className="text-xs text-[var(--text-muted)]">
+                    {notification.time}
+                  </span>
+                  {notification.unread && (
+                    <span className="h-2 w-2 rounded-full bg-linear-to-br from-indigo-500 to-cyan-400" />
+                  )}
+                </div>
+              </div>
+
+              <div
+                className="flex shrink-0 flex-col gap-2 pt-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200"
+                onClick={(e) => e.stopPropagation()}
               >
-                <ArrowUpRight size={16} />
-              </button>
-              <button
-                onClick={() => onDelete(notification.id)}
-                className="rounded-full p-1.5 text-[var(--text-muted)] transition hover:bg-red-50 hover:text-red-500 cursor-pointer"
-                title="Delete notification"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
+                <button
+                  onClick={() => onView(notification)}
+                  className="rounded-lg p-1.5 text-[var(--text-muted)] transition hover:bg-indigo-500/10 hover:text-indigo-400 cursor-pointer"
+                  title="View related item"
+                >
+                  <ArrowUpRight size={16} />
+                </button>
+                <button
+                  onClick={() => onDelete(notification.id)}
+                  className="rounded-lg p-1.5 text-[var(--text-muted)] transition hover:bg-rose-500/10 hover:text-rose-400 cursor-pointer"
+                  title="Delete notification"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -289,25 +303,25 @@ function NotificationGroup({ title, notifications, onRead, onDelete, onView }) {
 
 function NotificationIcon({ icon }) {
   const baseClass =
-    "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm border";
+    "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-xs border";
 
   if (icon === "success") {
     return (
-      <span className={`${baseClass} bg-emerald-50 text-emerald-600 border-emerald-100`}>
+      <span className={`${baseClass} bg-emerald-500/10 text-emerald-400 border-emerald-500/20`}>
         <Check size={18} strokeWidth={3} />
       </span>
     );
   }
   if (icon === "warning") {
     return (
-      <span className={`${baseClass} bg-amber-50 text-amber-600 border-amber-100`}>
+      <span className={`${baseClass} bg-amber-500/10 text-amber-400 border-amber-500/20`}>
         <AlertTriangle size={18} />
       </span>
     );
   }
   if (icon === "info") {
     return (
-      <span className={`${baseClass} bg-blue-50 text-blue-600 border-blue-100`}>
+      <span className={`${baseClass} bg-blue-500/10 text-blue-400 border-blue-500/20`}>
         <Info size={18} />
       </span>
     );
@@ -315,9 +329,9 @@ function NotificationIcon({ icon }) {
 
   return (
     <span
-      className={`${baseClass} bg-linear-to-br from-violet-100 to-cyan-100 border-violet-200/80 text-base font-extrabold text-violet-500`}
+      className={`${baseClass} bg-linear-to-br from-indigo-500/15 to-violet-500/15 border-indigo-500/20 text-xs font-extrabold text-indigo-400`}
     >
-      {typeof icon === "string" ? icon : "NT"}
+      {typeof icon === "string" ? icon : "SO"}
     </span>
   );
 }
