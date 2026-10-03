@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'ai' => [
+        'base_url' => env('SCHOLAROS_AI_BASE_URL', 'https://api.openai.com/v1'),
+        'api_key' => env('SCHOLAROS_AI_API_KEY'),
+        'model' => env('SCHOLAROS_AI_MODEL', 'gpt-4o-mini'),
+    ],
+
 ];

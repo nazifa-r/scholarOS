@@ -186,6 +186,33 @@ Route::prefix('v1')->group(function () {
         );
 
         // ------------------------------------------------------------
+        // SEARCH GOOGLE SCHOLAR
+        // GET /api/v1/papers/scholar-search?q=title&limit=10
+        // ------------------------------------------------------------
+        Route::get(
+            '/scholar-search',
+            [ResearchPaperController::class, 'searchGoogleScholar']
+        );
+
+        // ------------------------------------------------------------
+        // PERSONALIZED GOOGLE SCHOLAR RECOMMENDATIONS
+        // GET /api/v1/papers/recommendations (authenticated)
+        // ------------------------------------------------------------
+        Route::middleware('auth:sanctum')->get(
+            '/recommendations',
+            [ResearchPaperController::class, 'recommendations']
+        );
+
+        // ------------------------------------------------------------
+        // SUMMARIZE A RESEARCH PAPER (authenticated)
+        // POST /api/v1/papers/summarize
+        // ------------------------------------------------------------
+        Route::middleware('auth:sanctum')->post(
+            '/summarize',
+            [ResearchPaperController::class, 'summarize']
+        );
+
+        // ------------------------------------------------------------
         // GET SINGLE PAPER
         // GET /api/v1/papers/{id}
         // ------------------------------------------------------------

@@ -186,6 +186,23 @@ export async function getPaperStats() {
   return await apiRequest("/v1/dashboard/papers/stats");
 }
 
+/**
+ * Search Google Scholar for external research papers
+ * GET /api/v1/papers/scholar-search
+ */
+export async function searchGoogleScholarPapers(query, limit = 20) {
+  const params = new URLSearchParams({ q: query, limit: String(limit) });
+  return await apiRequest(`/v1/papers/scholar-search?${params}`);
+}
+
+/**
+ * Get Scholar recommendations for the authenticated user's selected interests
+ * GET /api/v1/papers/recommendations
+ */
+export async function getGoogleScholarRecommendations() {
+  return await apiRequest("/v1/papers/recommendations");
+}
+
 // ============================================================================
 // RESEARCHERS DIRECTORY
 // ============================================================================
