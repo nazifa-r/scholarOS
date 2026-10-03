@@ -13,12 +13,14 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../../utils/cn.js";
 import {
-  summarizePaper,
   getTrendingTopics,
 } from "../../services/dummyAIService.js";
+import { summarizePaper } from "../../services/aiService.js";
 import {
   getDashboardPapers,
   getPaperStats,
+  searchGoogleScholarPapers,
+  getGoogleScholarRecommendations,
 } from "../../services/dashboardService.js";
 
 function Chip({ label, active = false, onClick }) {
@@ -72,18 +74,29 @@ export default function Papers() {
 
   // Backend state
   const [papers, setPapers] = useState([]);
+  const [scholarPapers, setScholarPapers] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [scholarLoading, setScholarLoading] = useState(false);
+  const [scholarError, setScholarError] = useState("");
+  const [scholarRetry, setScholarRetry] = useState(0);
 
   // AI STATE
   const [aiSummaries, setAiSummaries] = useState({});
+  const [summaryErrors, setSummaryErrors] = useState({});
   const [summarizingPaperId, setSummarizingPaperId] = useState(null);
   const [aiError, setAiError] = useState("");
 
   const [trendingTopics, setTrendingTopics] = useState([]);
   const [trendingLoading, setTrendingLoading] = useState(true);
   const [trendingError, setTrendingError] = useState("");
+
+  const [recommendations, setRecommendations] = useState([]);
+  const [recommendationMeta, setRecommendationMeta] = useState(null);
+  const [recommendationLoading, setRecommendationLoading] = useState(true);
+  const [recommendationError, setRecommendationError] = useState("");
+  const [recommendationRetry, setRecommendationRetry] = useState(0);
 
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiPromptLoading, setAiPromptLoading] = useState(false);
@@ -119,6 +132,54 @@ export default function Papers() {
   useEffect(() => {
     fetchPapersData();
   }, [fetchPapersData]);
+
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (!query) {
+      setScholarPapers([]);
+      setScholarError("");
+      setScholarLoading(false);
+      return undefined;
+    }
+
+    let isCurrentSearch = true;
+    setScholarLoading(true);
+    setScholarError("");
+    setScholarPapers([]);
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const response = await searchGoogleScholarPapers(query, 20);
+        const results = Array.isArray(response?.data)
+          ? response.data
+          : response?.data?.data || [];
+
+        if (isCurrentSearch) {
+          setScholarPapers(results.map((paper, index) => ({
+            ...paper,
+            id: `scholar-${paper.url || `${paper.title || "result"}-${index}`}`,
+            isGoogleScholarResult: true,
+          })));
+        }
+      } catch (err) {
+        if (isCurrentSearch) {
+          setScholarPapers([]);
+          setScholarError(
+            err?.data?.message || err?.message || "Unable to search Google Scholar. Please try again.",
+          );
+        }
+      } finally {
+        if (isCurrentSearch) {
+          setScholarLoading(false);
+        }
+      }
+    }, 450);
+
+    return () => {
+      isCurrentSearch = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [searchQuery, scholarRetry]);
 
   // Handle outside click for sort dropdown
   useEffect(() => {
@@ -160,6 +221,45 @@ export default function Papers() {
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadRecommendations() {
+      try {
+        setRecommendationLoading(true);
+        setRecommendationError("");
+        const response = await getGoogleScholarRecommendations();
+        if (isMounted) {
+          const results = Array.isArray(response?.data)
+            ? response.data
+            : response?.data?.data || [];
+          setRecommendations(results.map((paper, index) => ({
+            ...paper,
+            id: `recommendation-${paper.url || `${paper.title || "paper"}-${index}`}`,
+          })));
+          setRecommendationMeta(response?.meta || null);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setRecommendations([]);
+          setRecommendationMeta(null);
+          setRecommendationError(
+            err?.data?.message || err?.message || "Unable to load personalized recommendations.",
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setRecommendationLoading(false);
+        }
+      }
+    }
+
+    loadRecommendations();
+    return () => {
+      isMounted = false;
+    };
+  }, [recommendationRetry]);
+
   const toggleBookmark = (id) => {
     setBookmarkedIds((prev) => {
       const next = new Set(prev);
@@ -169,39 +269,104 @@ export default function Papers() {
     });
   };
 
+  const searchResults = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return papers;
+
+    const matchesQuery = (paper) =>
+      [paper.title, paper.abstract, paper.authors]
+        .some((value) => value?.toLowerCase().includes(query));
+    const localMatches = papers.filter(matchesQuery);
+    const localTitles = new Set(
+      localMatches.map((paper) => paper.title?.trim().toLowerCase()).filter(Boolean),
+    );
+    const externalMatches = scholarPapers.filter((paper) =>
+      matchesQuery(paper) && !localTitles.has(paper.title?.trim().toLowerCase()),
+    );
+
+    return [...externalMatches, ...localMatches];
+  }, [papers, scholarPapers, searchQuery]);
+
+  const yearOptions = useMemo(() => {
+    const years = new Set(["2026", "2025", "2024"]);
+    const availableYears = new Set();
+    [...papers, ...scholarPapers].forEach((paper) => {
+      const publicationYear = Number(paper.publication_year) ||
+        (paper.created_at ? new Date(paper.created_at).getFullYear() : 0);
+      if (publicationYear > 0) {
+        years.add(String(publicationYear));
+        availableYears.add(String(publicationYear));
+      }
+    });
+
+    const currentYear = new Date().getFullYear();
+    const yearRanges = new Map();
+    availableYears.forEach((value) => {
+      const publicationYear = Number(value);
+      const rangeEnd = currentYear - Math.floor((currentYear - publicationYear) / 5) * 5;
+      const rangeStart = rangeEnd - 4;
+      const range = `${rangeStart}-${rangeEnd}`;
+      yearRanges.set(range, [...(yearRanges.get(range) || []), publicationYear]);
+    });
+
+    const individualYears = Array.from(years).sort((left, right) => Number(right) - Number(left));
+    const ranges = Array.from(yearRanges.entries())
+      .filter(([, rangeYears]) => new Set(rangeYears).size > 1)
+      .map(([range]) => range)
+      .sort((left, right) => Number(right.slice(0, 4)) - Number(left.slice(0, 4)));
+
+    return ["All", ...individualYears, ...ranges];
+  }, [papers, scholarPapers]);
+
   // Filtered & Sorted Papers
   const filteredPapers = useMemo(() => {
-    return papers.filter((p) => {
-      const titleMatch = !searchQuery.trim() ||
-        p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.abstract?.toLowerCase().includes(searchQuery.toLowerCase());
+    return searchResults.filter((p) => {
+      const isScholarResult = p.isGoogleScholarResult;
+      const searchableText = `${p.title || ""} ${p.abstract || ""} ${p.authors || ""}`.toLowerCase();
 
       const catName = p.category?.name || p.research_area?.name || "";
       const categoryMatch =
         category === "All" ||
-        catName.toLowerCase().includes(category.toLowerCase());
+        (isScholarResult
+          ? new RegExp(`\\b${category}\\b`, "i").test(searchableText)
+          : catName.toLowerCase().includes(category.toLowerCase()));
+
+      const departmentName = p.department?.name || p.department_name || p.uploaded_by?.department?.name || "";
+      const departmentMatch =
+        department === "All" ||
+        (isScholarResult
+          ? new RegExp(`\\b${department}\\b`, "i").test(searchableText)
+          : departmentName.toLowerCase().includes(department.toLowerCase()));
 
       const statusMatch =
         !status ||
+        (!isScholarResult && (
         p.status?.toLowerCase() === status.toLowerCase().replace(/ /g, "_") ||
-        p.status?.toLowerCase() === status.toLowerCase();
+        p.status?.toLowerCase() === status.toLowerCase()));
 
-      const yearMatch =
-        year === "All" ||
-        (p.created_at && new Date(p.created_at).getFullYear().toString() === year) ||
-        (p.publication_year && p.publication_year.toString() === year);
+      const publicationYear = Number(p.publication_year) ||
+        (p.created_at ? new Date(p.created_at).getFullYear() : 0);
+      const yearRange = year.match(/^(\d{4})-(\d{4})$/);
+      const yearMatch = year === "All" || (yearRange
+        ? publicationYear >= Number(yearRange[1]) && publicationYear <= Number(yearRange[2])
+        : publicationYear.toString() === year);
 
-      return titleMatch && categoryMatch && statusMatch && yearMatch;
+      return categoryMatch && departmentMatch && statusMatch && yearMatch;
     });
-  }, [papers, searchQuery, category, status, year]);
+  }, [searchResults, category, department, status, year]);
 
   const sortedPapers = useMemo(() => {
     const list = [...filteredPapers];
     switch (sortBy) {
       case "Most Recent":
-        return list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        return list.sort((a, b) => {
+          const yearFor = (paper) => Number(paper.publication_year) ||
+            (paper.created_at ? new Date(paper.created_at).getFullYear() : 0);
+          const yearDifference = yearFor(b) - yearFor(a);
+          return yearDifference || new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        });
       case "Most Cited":
-        return list.sort((a, b) => (b.citations || b.views || 0) - (a.citations || a.views || 0));
+        return list.sort((a, b) => Number(b.citations || b.views || 0) - Number(a.citations || a.views || 0));
       case "A-Z":
         return list.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
       default:
@@ -218,9 +383,9 @@ export default function Papers() {
 
     try {
       setAiError("");
+      setSummaryErrors((previous) => ({ ...previous, [paper.id]: "" }));
       setSummarizingPaperId(paper.id);
       const result = await summarizePaper({
-        id: paper.id,
         title: paper.title,
         abstract: paper.abstract,
         category: paper.category?.name || paper.research_area?.name,
@@ -231,7 +396,10 @@ export default function Papers() {
         [paper.id]: result,
       }));
     } catch (err) {
-      setAiError(err?.message || "Unable to generate an AI summary. Please try again.");
+      setSummaryErrors((previous) => ({
+        ...previous,
+        [paper.id]: err?.data?.message || err?.message || "Unable to generate an AI summary. Please try again.",
+      }));
     } finally {
       setSummarizingPaperId(null);
     }
@@ -267,7 +435,6 @@ export default function Papers() {
       }
 
       const result = await summarizePaper({
-        id: paper.id,
         title: paper.title,
         abstract: paper.abstract,
         category: paper.category?.name || paper.research_area?.name,
@@ -285,7 +452,11 @@ export default function Papers() {
     }
   };
 
-  const totalPaperCount = stats?.total ?? papers.length;
+  const totalPaperCount = searchQuery.trim()
+    ? searchResults.length
+    : stats?.total ?? papers.length;
+
+  const retryScholarSearch = () => setScholarRetry((retry) => retry + 1);
 
   return (
     <div className="space-y-6 pb-8 w-full min-w-0 relative">
@@ -434,7 +605,7 @@ export default function Papers() {
             </div>
 
             <div className="flex flex-wrap gap-2 mb-6">
-              {["All", "2026", "2025", "2024"].map((y) => (
+              {yearOptions.map((y) => (
                 <Chip
                   key={y}
                   label={y}
@@ -458,6 +629,101 @@ export default function Papers() {
                 />
               ))}
             </div>
+          </div>
+
+          <div className="glass-panel rounded-[28px] p-7">
+            <div className="flex items-center gap-2 mb-5">
+              <FileText size={14} className="text-indigo-500" />
+              <span className="text-[10px] font-bold tracking-[0.15em] text-[var(--text-muted)] uppercase">
+                Recommended Papers
+              </span>
+            </div>
+
+            {recommendationLoading ? (
+              <div className="space-y-4" role="status" aria-label="Loading recommendations">
+                {[1, 2, 3].map((item) => (
+                  <div key={item} className="animate-pulse space-y-2 py-3">
+                    <div className="h-3 w-10 bg-[var(--muted)] rounded" />
+                    <div className="h-4 w-4/5 bg-[var(--muted)] rounded" />
+                    <div className="h-3 w-2/3 bg-[var(--muted)] rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : recommendationError ? (
+              <div role="alert" className="text-sm text-red-600 leading-relaxed">
+                <p>{recommendationError}</p>
+                <button
+                  onClick={() => setRecommendationRetry((retry) => retry + 1)}
+                  className="inline-flex items-center gap-2 mt-3 font-semibold hover:underline cursor-pointer"
+                >
+                  <RotateCw size={14} /> Retry recommendations
+                </button>
+              </div>
+            ) : recommendations.length === 0 ? (
+              <div className="text-sm text-[var(--text-secondary)]">
+                {recommendationMeta?.status === "no_interests"
+                  ? "Select research interests in your profile to get personalized paper recommendations."
+                  : "No Google Scholar papers were found for your selected research interests."}
+              </div>
+            ) : (
+              <>
+                {recommendationMeta?.status === "partial_failure" && (
+                  <p className="text-xs text-amber-700 mb-3" role="status">
+                    Some research interests could not be searched. Showing the available recommendations.
+                  </p>
+                )}
+                <div className="divide-y divide-[var(--border)]">
+                  {recommendations.slice(0, 5).map((paper, index) => {
+                    const paperUrl = paper.url || paper.google_scholar_search_url;
+
+                    return (
+                      <div
+                        key={paper.id}
+                        className="flex items-start gap-4 py-4 first:pt-0 last:pb-0"
+                      >
+                        <div className="text-sm font-semibold text-[var(--text-muted)] pt-0.5">
+                          {String(index + 1).padStart(2, "0")}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <a
+                            href={paperUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-bold text-[var(--text-primary)] leading-snug hover:text-indigo-600"
+                          >
+                            {paper.title}
+                          </a>
+                          <div className="text-xs text-[var(--text-muted)] mt-1">
+                            {paper.authors || "Authors unavailable"}
+                            {paper.publication_year ? ` · ${paper.publication_year}` : ""}
+                          </div>
+                          {Array.isArray(paper.matched_interests) && paper.matched_interests.length > 0 && (
+                            <div className="text-[11px] text-indigo-500 font-semibold mt-1">
+                              {paper.matched_interests.join(" · ")}
+                            </div>
+                          )}
+                          {paper.abstract && (
+                            <p className="text-xs text-[var(--text-secondary)] leading-relaxed mt-2 line-clamp-3">
+                              {paper.abstract}
+                            </p>
+                          )}
+                        </div>
+                        {paper.citations > 0 && (
+                          <span className="shrink-0 text-[10px] font-bold text-[var(--text-muted)]">
+                            {paper.citations} citations
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {recommendations.length > 5 && (
+                  <p className="text-xs text-[var(--text-muted)] mt-4">
+                    Showing 5 of {recommendations.length} recommendations
+                  </p>
+                )}
+              </>
+            )}
           </div>
 
           {/* AI TRENDING TOPICS */}
@@ -599,6 +865,25 @@ export default function Papers() {
             </div>
           </div>
 
+          {searchQuery.trim() && scholarLoading && (
+            <div role="status" className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+              <RotateCw size={14} className="animate-spin" />
+              Searching Google Scholar...
+            </div>
+          )}
+
+          {searchQuery.trim() && scholarError && !scholarLoading && (
+            <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              <span>{scholarError}</span>
+              <button
+                onClick={retryScholarSearch}
+                className="inline-flex items-center gap-2 font-semibold hover:underline cursor-pointer"
+              >
+                <RotateCw size={14} /> Retry search
+              </button>
+            </div>
+          )}
+
           {/* Loading state */}
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => (
@@ -623,7 +908,11 @@ export default function Papers() {
             <div className="glass-panel rounded-[28px] p-14 text-center text-[var(--text-secondary)]">
               <FileText className="h-12 w-12 text-indigo-400 mx-auto mb-3 opacity-60" />
               <h3 className="text-lg font-bold text-[var(--text-primary)]">No Papers Found</h3>
-              <p className="text-sm mt-1">No research papers match your current filters.</p>
+              <p className="text-sm mt-1">
+                {searchQuery.trim()
+                  ? `No local or Google Scholar papers match "${searchQuery.trim()}" with the current filters.`
+                  : "No research papers match your current filters."}
+              </p>
               <button
                 onClick={() => {
                   setCategory("All");
@@ -640,11 +929,20 @@ export default function Papers() {
           ) : (
             sortedPapers.map((p, idx) => {
               const aiSummary = aiSummaries[p.id];
+              const summaryError = summaryErrors[p.id];
               const isSummarizing = summarizingPaperId === p.id;
-              const displayId = p.id ? `RP-${String(p.id).padStart(4, "0")}` : `RP-${idx + 1}`;
-              const categoryTag = p.category?.name || p.research_area?.name || "Research Systems";
-              const displayStatus = formatStatus(p.status);
-              const statusStyle = getStatusBadgeStyle(p.status);
+              const displayId = p.isGoogleScholarResult
+                ? "Google Scholar"
+                : p.id ? `RP-${String(p.id).padStart(4, "0")}` : `RP-${idx + 1}`;
+              const categoryTag = p.isGoogleScholarResult
+                ? "Google Scholar"
+                : p.category?.name || p.research_area?.name || "Research Systems";
+              const displayStatus = p.isGoogleScholarResult
+                ? p.publication_year ? `Published ${p.publication_year}` : "Scholar result"
+                : formatStatus(p.status);
+              const statusStyle = p.isGoogleScholarResult
+                ? "text-[var(--badge-blue-text)] bg-[var(--badge-blue)]"
+                : getStatusBadgeStyle(p.status);
 
               const authorsText = p.authors
                 ? Array.isArray(p.authors)
@@ -677,7 +975,11 @@ export default function Papers() {
 
                       {/* TITLE */}
                       <h3 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight leading-snug hover:text-indigo-600 transition-colors duration-200 cursor-pointer">
-                        {p.title}
+                        {p.isGoogleScholarResult && p.url ? (
+                          <a href={p.url} target="_blank" rel="noreferrer">
+                            {p.title}
+                          </a>
+                        ) : p.title}
                       </h3>
 
                       {/* AUTHORS */}
@@ -700,7 +1002,7 @@ export default function Papers() {
                             Analyzing paper with ScholarOS AI...
                           </div>
                           <p className="text-xs text-slate-400 mt-2">
-                            Generating summary, key findings, contributions, and keywords.
+                            Generating a summary, key findings, main contribution, and keywords.
                           </p>
                         </div>
                       ) : aiSummary ? (
@@ -749,22 +1051,14 @@ export default function Papers() {
                             </div>
                           )}
 
-                          {Array.isArray(aiSummary.contributions) && aiSummary.contributions.length > 0 && (
+                          {aiSummary.mainContribution && (
                             <div className="mb-5">
                               <div className="text-xs font-bold uppercase tracking-[0.12em] text-indigo-500 mb-2">
-                                Main Contributions
+                                Main Contribution
                               </div>
-                              <ul className="space-y-2">
-                                {aiSummary.contributions.map((contribution, contributionIndex) => (
-                                  <li
-                                    key={contributionIndex}
-                                    className="flex items-start gap-2 text-sm text-[var(--text-secondary)] leading-relaxed"
-                                  >
-                                    <span className="text-indigo-400 mt-1">•</span>
-                                    <span>{contribution}</span>
-                                  </li>
-                                ))}
-                              </ul>
+                              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                                {aiSummary.mainContribution}
+                              </p>
                             </div>
                           )}
 
@@ -796,6 +1090,19 @@ export default function Papers() {
                           Summarize with AI
                         </button>
                       )}
+                      {summaryError && !isSummarizing && (
+                        <div role="alert" className="text-sm text-rose-600 leading-relaxed">
+                          <p>{summaryError}</p>
+                          {p.abstract?.trim() && (
+                            <button
+                              onClick={() => handleSummarize(p)}
+                              className="inline-flex items-center gap-2 mt-2 font-semibold hover:underline cursor-pointer"
+                            >
+                              <RotateCw size={13} /> Retry summary
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* STATS / BOOKMARK */}
@@ -809,14 +1116,16 @@ export default function Papers() {
                         </div>
                       </div>
 
-                      <div className="text-center">
-                        <div className="text-xl font-extrabold text-[var(--text-primary)]">
-                          {p.views ?? p.downloads ?? 0}
+                      {!p.isGoogleScholarResult && (
+                        <div className="text-center">
+                          <div className="text-xl font-extrabold text-[var(--text-primary)]">
+                            {p.views ?? p.downloads ?? 0}
+                          </div>
+                          <div className="text-[10px] text-[var(--text-muted)] tracking-[0.08em] uppercase">
+                            Views
+                          </div>
                         </div>
-                        <div className="text-[10px] text-[var(--text-muted)] tracking-[0.08em] uppercase">
-                          Views
-                        </div>
-                      </div>
+                      )}
 
                       <button
                         onClick={() => toggleBookmark(p.id)}

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ResearchPaper;
 use App\Services\GoogleScholarService;
+use App\Services\PaperSummarizationService;
 use Illuminate\Http\Request;
 
 class ResearchPaperController extends Controller
@@ -144,6 +145,136 @@ class ResearchPaperController extends Controller
                 'current_page' => $papers->currentPage(),
                 'last_page' => $papers->lastPage(),
             ]
+        ]);
+    }
+
+    /**
+     * Search Google Scholar for external research papers.
+     * GET /api/v1/papers/scholar-search
+     */
+    public function searchGoogleScholar(Request $request)
+    {
+        $validated = $request->validate([
+            'q' => 'required|string|min:1|max:255',
+            'limit' => 'sometimes|integer|min:1|max:20',
+        ]);
+
+        try {
+            $papers = $this->scholarService->search($validated['q'], (int) ($validated['limit'] ?? 10));
+        } catch (\RuntimeException $exception) {
+            report($exception);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Google Scholar is temporarily unavailable. Please try again later.',
+            ], 502);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Google Scholar results retrieved successfully',
+            'data' => $papers,
+            'meta' => [
+                'query' => $validated['q'],
+                'count' => count($papers),
+            ],
+        ]);
+    }
+
+    /**
+     * Recommend Google Scholar papers based on the authenticated user's interests.
+     * GET /api/v1/papers/recommendations
+     */
+    public function recommendations(Request $request)
+    {
+        try {
+            $recommendations = $this->scholarService->recommendationsForUser($request->user());
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Google Scholar recommendations are temporarily unavailable.',
+            ], 502);
+        }
+
+        $interests = $recommendations['interests'];
+        $papers = $recommendations['papers'];
+        $failedInterests = $recommendations['failed_interests'];
+
+        if ($interests === []) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Select research interests to receive paper recommendations.',
+                'data' => [],
+                'meta' => [
+                    'status' => 'no_interests',
+                    'interests' => [],
+                    'count' => 0,
+                ],
+            ]);
+        }
+
+        if ($papers === [] && $failedInterests !== []) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Google Scholar recommendations could not be retrieved. Please try again later.',
+                'meta' => [
+                    'interests' => $interests,
+                    'failed_interests' => $failedInterests,
+                ],
+            ], 502);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $papers === []
+                ? 'No Google Scholar papers were found for your research interests.'
+                : 'Personalized Google Scholar recommendations retrieved successfully.',
+            'data' => $papers,
+            'meta' => [
+                'status' => $failedInterests === [] ? 'complete' : 'partial_failure',
+                'interests' => $interests,
+                'failed_interests' => $failedInterests,
+                'count' => count($papers),
+            ],
+        ]);
+    }
+
+    /**
+     * Generate an AI summary for a selected research paper.
+     * POST /api/v1/papers/summarize
+     */
+    public function summarize(Request $request, PaperSummarizationService $summarizationService)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:300',
+            'abstract' => 'required|string|max:30000',
+            'category' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $summary = $summarizationService->summarize(
+                $validated['title'],
+                $validated['abstract'],
+                $validated['category'] ?? null
+            );
+        } catch (\Throwable $exception) {
+            report($exception);
+            $isUnconfigured = $exception->getMessage() === 'AI summarization is not configured.';
+
+            return response()->json([
+                'success' => false,
+                'message' => $isUnconfigured
+                    ? $exception->getMessage()
+                    : 'Unable to generate an AI summary right now. Please try again later.',
+            ], $isUnconfigured ? 503 : 502);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Research paper summary generated successfully.',
+            'data' => $summary,
         ]);
     }
 
